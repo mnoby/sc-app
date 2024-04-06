@@ -158,6 +158,13 @@ const vuetifyTheme = useTheme()
           to: '/orders',
         }"
       />
+      <VerticalNavLink
+        :item="{
+          title: 'Products',
+          icon: 'bx-cake',
+          to: '/products',
+        }"
+      />
     </template>
 
     

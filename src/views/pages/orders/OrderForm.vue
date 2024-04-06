@@ -1,17 +1,94 @@
 <script setup>
+import DeliveryService from '@/services/DeliveryService'
+import OrderService from '@/services/OrderService'
 import { VCardText } from 'vuetify/lib/components/index.mjs'
 
 const orderData = {
-  customerName: '',
-  phoneNumber: '',
-  city: '',
-  quantity: '',
-  price: '1000',
-  subTotal: '2000',
+  customerDetails: {
+    customerName: '',
+    phoneNumber: '',
+    address: '',
+    city: '',
+  },  
+  orderDetails: {
+    quantity: '',
+    price: '1000',
+    subTotal: '2000',
+    cakeOptions: 'Choose Yours',
+  },
   deliveryOptions: 'By Courier',
-  cakeOptions: 'Choose Yours',
 }
 
+// ============================  GET DELIVERY OPTIONS ============================
+const selectedItem = ref(null)
+
+// Fetch data from Firestore on component mount
+let deliveryTypes = ref([])
+onMounted(async () => {
+  try {
+    const response = await DeliveryService.getAll().get()
+
+    deliveryTypes.value = response.docs.map(doc => (doc.data().delivery_type))
+
+    // console.log(`HAHAHA ${JSON.stringify(deliveryTypes.value)}`)
+
+  } catch (error) {
+    console.error('Error fetching delivery options: ', error)
+  }
+
+  
+})
+
+// ============================  END GET DELIVERY OPTIONS ============================
+
+// ============================  SAVE ORDER FLOW ============================
+const saveOrder = () => {
+  var data = {
+    customer_details: {
+      customer_name: orderData.customerDetails.customerName,
+      phone_number: orderData.customerDetails.phoneNumber,
+      address: orderData.customerDetails.address,
+      city: orderData.customerDetails.city,
+    },
+    order_details: {
+      quantity: orderData.orderDetails.quantity,
+      price: orderData.orderDetails.price,
+      sub_total: orderData.orderDetails.subTotal,
+      cake_options: orderData.orderDetails.cakeOptions,
+    },
+    delivery_options: orderData.orderDetails.deliveryOptions,
+  }
+
+  OrderService.create(data)
+    .then(() => {
+      console.log("Created new item successfully!")
+      console.log(orderData.customerName)
+
+      // this.submitted = true
+    })
+    .catch(e => {
+      console.log(e)
+    })
+}
+    
+const newOrder = () => {
+  this.submitted = false
+  this.order = {
+    customerName: '',
+    phoneNumber: '',
+    city: '',
+    quantity: 2,
+    price: 1000,
+    subTotal: 2000,
+    deliveryOptions: '',
+    cakeOptions: '',
+  }
+}
+
+// ============================  END SAVE ORDER FLOW ============================
+
+
+// ============= ADD ORDER FIELDS =============================== 
 const fields = ref([{ cakeOptions: '', quantity: '', price: '', subTotal: ''  }])
 
 // Method to add a new field
@@ -24,7 +101,13 @@ const removeField = index => {
   fields.value.splice(index, 1)
 }
 
-const orderDataLocal = ref(structuredClone(orderData))
+// ============= END ADD ORDER FIELDS =============================== 
+
+const idx = index => {
+  console.log(`Index :`, index)
+}
+
+const orderDataLocal = ref(orderData)
 
 const checkDigit = () => {
   if (event.key.length === 1 && isNaN(Number(event.key))) {
@@ -84,7 +167,7 @@ const checkDigit = () => {
               v-model="orderDataLocal.deliveryOptions"
               label="Delivery Options"
               placeholder="Choose Yours"
-              :items="['Take at Home', 'By Courier', 'Travel Group', 'Paxel']"
+              :items="deliveryTypes"
             />
           </VCol>
         
@@ -170,18 +253,19 @@ const checkDigit = () => {
                   />
                   <div class="flex-grow-1" />
                 </VCol>
-
-                <VCol>
-                  <VBtn
-                    type="deleteItem"
-                    class="mt-4"
-                    size="small"
-                    color="error"
-                    @click="removeField"
-                  >
-                    <VIcon icon="bx-basket" />
-                  </VBtn>
-                </VCol>
+                <div v-if="index>0">
+                  <VCol>
+                    <VBtn
+                      type="deleteItem"
+                      class="mt-4"
+                      size="small"
+                      color="error"
+                      @click="removeField"
+                    >
+                      <VIcon icon="bx-basket" />
+                    </VBtn>
+                  </VCol>
+                </div>
               </VRow>
             </div>
           </VCardText>
@@ -194,6 +278,7 @@ const checkDigit = () => {
             <VBtn
               block
               type="submit"
+              @click="saveOrder"
             >
               Save
             </VBtn>
