@@ -1,15 +1,26 @@
+<!-- eslint-disable vue/attribute-hyphenation -->
 <script setup>
-import ProductForm from '@/views/pages/products/ProductForm.vue'
-import ProductList from '@/views/pages/products/ProductList.vue'
+import ProductForm from '@/views/pages/products/ProductForm.vue';
+import ProductList from '@/views/pages/products/ProductList.vue';
+import { useStore } from 'vuex';
 
-const formActive= ref(false)
+const store = useStore()
+const isMainPageValue = computed(() => store.state.isMainPage)
+
+// Console log the value of isMainPage
+console.log('isMainPage value:', isMainPageValue.value)
+
+// const isMainPage= ref(true)
 
 const newProduct = () => {
-  formActive.value= true
+  // isMainPage.value= false
+  store.commit('setMainPage', false)
+  console.log('isMainPage value:', isMainPageValue.value)
 }
 
 const backToProductList = () => {
-  formActive.value= false
+  // isMainPage.value= true
+  store.commit('setMainPage', true)
 }
 </script>
 
@@ -19,35 +30,46 @@ const backToProductList = () => {
       <VCol cols="12">
         <!-- 👉 Horizontal Form -->
         <VCard title="Products">
-          <VCardText v-if="!formActive">
-            <div>
+
+            <!-- ========================== MAIN CONTENT =================================-->
+          <VCardText v-if="isMainPageValue">
+            <div class="d-flex justify-end mb-2">
               <VBtn
+              class
                 type="submit"
                 size="small"
                 @click="newProduct"
               >
-                <VIcon icon="bx-book-add" />
+                <VIcon icon="bx-book-add" class="mr-1"/>
                 Add Product
               </VBtn>
             </div>
-
             <ProductList />
           </VCardText>
-          
+
           <VCardText v-else>
             <ProductForm />
-            <div class="d-flex flex-column align-right py-5">
-              <VBtn
-                color="primary"
-                variant="tonal"
-                @click="backToProductList"
-              >
-                Back to Product List
-              </VBtn>
-            </div>
           </VCardText>
+
+
+          <!-- ============ BACK BUTTON =================================-->
+          <div v-if="!isMainPageValue">
+            <VBtn
+              color="primary"
+              variant="tonal"
+              @click="backToProductList"
+            >
+              Back to Product List
+            </VBtn>
+          </div>
         </VCard>
       </VCol>
+
+
+
+
+
+      <!-- ========================================================================================= -->
       <!--
         <VCol
         cols="12"
