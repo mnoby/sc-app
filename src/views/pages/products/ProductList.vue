@@ -1,43 +1,66 @@
 <!-- eslint-disable vue/attribute-hyphenation -->
 <script setup>
+import Modal from '@/layouts/components/Modal.vue'
 import ProductService from '@/services/ProductService'
+import modalPict from '@images/cards/illustration-john-dark.png'
 import { useStore } from 'vuex'
 
 const store = useStore()
-const isMainPageValue = computed(() => store.state.isMainPage)
-
-
+const isModalOpened = ref(false)
+const isConfirmed = ref(false)
+const deletedData = ref()
 const productData=ref([])
-const updateData=ref()
-const updated=ref(false)
+const isMainPageValue = computed(() => store.state.isMainPage)
 
 onMounted(async () => {
   try {
-    
     const response = await ProductService.getAll().get()
 
     productData.value = response.docs.map(doc => ({ product_id: doc.id, product_name: doc.data().p_name, product_price: doc.data().p_price }))
-
-    // console.log(`HAHAHA ${JSON.stringify(productData.value)}`
-
   } catch (error) {
     console.error('Error fetching delivery options: ', error)
   }
-
 })
 
+const closeModal = () => {
+  isModalOpened.value = false
+  window.location.reload()
+}
+
 const updateProduct=(productId, productName, productPrice)=>{
-
-  console.log (`Id >>>>>>>>>>>> ${productId}`)
-  updated.value= true
-
   let data = {
-    productName: productName,
-    productPrice: productPrice,
+    id: productId,
+    details: {
+      productName: productName,
+      productPrice: productPrice,
+    },
   }
   store.commit('setMainPage', false)
-  updateData.value = data
-  console.log(`TAAAAAA >>>> ${JSON.stringify(updateData.value)}`)
+  store.commit('setUpdateValues', data)
+  console.log('udpateValues From List productList:', JSON.stringify(store.state.updateValues))
+
+  
+  console.log (`Id >>>>>>>>>>>> ${productId}`)
+  console.log(`YAAAA ${JSON.stringify(data)}`)
+
+}
+
+const openModal = (productId, productName) => {
+  isModalOpened.value = true
+  deletedData.value={
+    id: productId,
+    name: productName,
+  }
+}
+
+const deleteProduct=productId=>{
+  ProductService.delete(productId)
+  console.log(`Product ${productId} Deleted Successfully`)
+  isConfirmed.value = true
+}
+
+const formatNumber = number => {
+  return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
 }
 </script>
 
@@ -68,7 +91,7 @@ const updateProduct=(productId, productName, productPrice)=>{
           {{ product.product_name }}
         </td>
         <td class="text-center">
-          {{ product.product_price }}
+          {{ formatNumber(product.product_price) }}
         </td>
         <td>
           <div class="d-md-flex gap-x-2">
@@ -86,6 +109,7 @@ const updateProduct=(productId, productName, productPrice)=>{
               type="deleteProduct"
               size="small"
               color="error"
+              @click="openModal(product.product_id, product.product_name)"
             >
               <VIcon icon="bx-trash" />
             </VBtn>
@@ -94,4 +118,52 @@ const updateProduct=(productId, productName, productPrice)=>{
       </tr>
     </tbody>
   </VTable>
+
+  <Modal
+    :is-open="isModalOpened"
+    name="first-modal"
+    @modal-close="closeModal"
+  >
+    <template #header />
+    <template #content>
+      <VImg
+        :src="modalPict"
+        height="100px"
+      />
+      <div v-if="!isConfirmed">
+        Are You Sure Delete <h4>{{ deletedData.name }} ?</h4>
+      </div>
+
+      <div v-else>
+        <h2>Success!</h2>
+      </div>
+    </template>
+    <template #footer>
+      <div
+        v-if="!isConfirmed"
+        class="d-md-flex gap-x-10"
+      >
+        <VBtn
+          type="submit"
+          size="small"
+          color="error"
+          @click="deleteProduct(deletedData.id)"
+        >
+          YES
+        </VBtn>
+
+        <VBtn
+          type="submit"
+          size="small"
+          color="info"
+          @click="closeModal"
+        >
+          NO
+        </VBtn>
+      </div>
+      <div v-else>
+        <h4> {{ deletedData.name }}</h4> has been Deleted !
+      </div>
+    </template>
+  </Modal>
 </template>

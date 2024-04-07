@@ -1,49 +1,84 @@
 <script setup>
+import Modal from '@/layouts/components/Modal.vue'
 import ProductService from '@/services/ProductService'
+import modalPict from '@images/cards/illustration-john-dark.png'
+import { useStore } from 'vuex'
+
+const isModalOpened = ref(false)
+let modalTxt=''
+
+const openModal = () => {
+  isModalOpened.value = true
+}
+
+const closeModal = () => {
+  isModalOpened.value = false
+  refreshField()
+}
+
+const store = useStore()
+const updateValues =store.state.updateValues
 
 const submitted=ref(false)
-const updated=ref(false)
 
-
-let productData = {
+const productData = ref({
   productName: '',
   productPrice: '',
+})
+
+if (updateValues!= null){
+  productData.value = updateValues.details
 }
 
-// ============================  SAVE ORDER FLOW ============================
+const checks = () => {
+
+  if (updateValues!= null){
+
+    console.log(`PAPAPA >> ${JSON.stringify(updateValues.details)}`)
+    console.log(`MAMAMA >> ${JSON.stringify(updateValues.id)}`)
+    productData.value = updateValues.details
+  } else{
+    console.log(`Kosong Broo}`)
+  }
+}
 
 const saveProduct = () => {
+// ============================  SAVE ORDER FLOW ============================
+
   var data = {
-    p_name: productData.productName,
-    p_price: parseInt(productData.productPrice),
+    p_name: productData.value.productName,
+    p_price: parseInt(productData.value.productPrice),
   }
 
-  ProductService.create(data)
-    .then(() => {
-      console.log("Created new item successfully!")
+  if (updateValues== null){
+    modalTxt = 'Added'
 
-      // console.log(productData.productName)
-      submitted.value= true
-
-      // this.submitted = true
+    ProductService.create(data)
+      .then(() => {
+        console.log("Created new item successfully!")
+      })
+      .catch(e => {
+        console.log(e)
+      })
+  } else{
+    modalTxt = 'Updated'
+    ProductService.update(updateValues.id, data).then(() => {
+      console.log(`AJJAJAJA ${JSON.stringify(data)}`)
     })
-    .catch(e => {
-      console.log(e)
-    })
+  }
+  isModalOpened.value = true
+  console.log(`modaTxt ${JSON.stringify(modalTxt)}`)
 }
     
-const newProduct = () => {
-  submitted.value= false,
-  productData = {
+const refreshField = () => {
+  submitted.value= false,  productData.value = {
     productName: '',
     productPrice: '',
   }
-  productDataLocal.value = productData
+  productData.value = productData.value
 }
 
 // ============================  END SAVE ORDER FLOW ============================
-const productDataLocal = ref(productData)
-
 const checkDigit = () => {
   if (event.key.length === 1 && isNaN(Number(event.key))) {
     event.preventDefault()
@@ -53,10 +88,7 @@ const checkDigit = () => {
 
 <template>
   <VCardText>
-    <VForm
-      v-if="!submitted"
-      @submit.prevent="saveProduct"
-    >
+    <VForm @submit.prevent="saveProduct">
       <VRow>
         <VCol cols="12">
           <VRow no-gutters>
@@ -74,7 +106,7 @@ const checkDigit = () => {
             >
               <VTextField
                 id="productName"
-                v-model="productDataLocal.productName"
+                v-model="productData.productName"
                 placeholder="Input Your Product Name"
               />
             </VCol>
@@ -97,7 +129,7 @@ const checkDigit = () => {
             >
               <VTextField
                 id="price"
-                v-model="productDataLocal.productPrice"
+                v-model="productData.productPrice"
                 placeholder="5000"
                 persistent-placeholder
                 @keydown="checkDigit"
@@ -116,38 +148,26 @@ const checkDigit = () => {
           <VBtn type="submit">
             Save
           </VBtn>
-          <VBtn
-            color="secondary"
-            variant="tonal"
-            type="reset"
-          >
-            Reset
-          </VBtn>
         </VCol>
       </VRow>
     </VForm>
-
-    <div v-else>
-      <h4>{{ productData.productName }} has been Added Successfully!</h4>
-      <VCol
-        offset-md="3"
-        cols="12"
-        md="9"
-        class="d-flex gap-4"
-      >
-        <VBtn
-          type="submit"
-          @click="newProduct"
-        >
-          Add More Product
-        </VBtn>
-        <VBtn
-          color="secondary"
-          variant="tonal"
-        >
-          Lihat Product
-        </VBtn>
-      </VCol>
-    </div>
+    
+    <Modal
+      :is-open="isModalOpened"
+      name="first-modal"
+      @modal-close="closeModal"
+    >
+      <template #header />
+      <template #content>
+        <VImg
+          :src="modalPict"
+          height="100px"
+        />
+        <h2>Congratulations!</h2>
+      </template>
+      <template #footer>
+        <h4> {{ (productData.productName) }}</h4> has {{ modalTxt }} Successfully
+      </template>
+    </Modal>
   </VCardText>
 </template>

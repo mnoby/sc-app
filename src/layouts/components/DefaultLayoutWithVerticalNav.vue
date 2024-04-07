@@ -7,7 +7,6 @@ import { useTheme } from 'vuetify'
 // Components
 import Footer from '@/layouts/components/Footer.vue'
 import NavbarThemeSwitcher from '@/layouts/components/NavbarThemeSwitcher.vue'
-import UserProfile from '@/layouts/components/UserProfile.vue'
 
 const vuetifyTheme = useTheme()
 
@@ -62,7 +61,7 @@ const vuetifyTheme = useTheme()
 
         <NavbarThemeSwitcher class="me-2" />
 
-        <UserProfile />
+        <!-- <UserProfile /> -->
       </div>
     </template>
 
@@ -175,7 +174,7 @@ const vuetifyTheme = useTheme()
     <template #footer>
       <Footer />
     </template>
-  </VerticalNavLayout>
+  </verticalnavlayout>
 </template>
 
 <style lang="scss" scoped>

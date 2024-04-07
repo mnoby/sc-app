@@ -10,7 +10,9 @@ const store = createStore({
     setMainPage(state, value) {
       state.isMainPage = value
     },
-    
+    setUpdateValues(state, value){
+      state.updateValues = value
+    },
   },
 })
 

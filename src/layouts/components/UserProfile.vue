@@ -29,7 +29,7 @@ import avatar1 from '@images/avatars/avatar-1.png'
           <!-- 👉 User Avatar & Name -->
           <VListItem>
             <template #prepend>
-              <VListItemAction start>
+              <VListItemAction>
                 <VBadge
                   dot
                   location="bottom right"

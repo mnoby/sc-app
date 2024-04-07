@@ -1,6 +1,6 @@
 <script>
-import { useDisplay } from 'vuetify'
 import VerticalNav from '@layouts/components/VerticalNav.vue'
+import { useDisplay } from 'vuetify'
 
 export default defineComponent({
   setup(props, { slots }) {
@@ -86,7 +86,7 @@ export default defineComponent({
   }
 
   .layout-navbar {
-    z-index: variables.$layout-vertical-nav-layout-navbar-z-index;
+    z-index: 0;
 
     .navbar-content-container {
       block-size: variables.$layout-vertical-nav-navbar-height;

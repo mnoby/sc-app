@@ -29,14 +29,9 @@ onMounted(async () => {
     const response = await DeliveryService.getAll().get()
 
     deliveryTypes.value = response.docs.map(doc => (doc.data().delivery_type))
-
-    // console.log(`HAHAHA ${JSON.stringify(deliveryTypes.value)}`)
-
   } catch (error) {
     console.error('Error fetching delivery options: ', error)
   }
-
-  
 })
 
 // ============================  END GET DELIVERY OPTIONS ============================
@@ -63,8 +58,6 @@ const saveOrder = () => {
     .then(() => {
       console.log("Created new item successfully!")
       console.log(orderData.customerName)
-
-      // this.submitted = true
     })
     .catch(e => {
       console.log(e)
@@ -119,7 +112,7 @@ const checkDigit = () => {
 <template>
   <VRow>
     <VCol cols="12">
-      <VForm @submit.prevent="() => {}">
+      <VForm @submit.prevent="saveOrder">
         <VRow>
           <!-- 👉 First Name -->
           <VCol
@@ -278,7 +271,6 @@ const checkDigit = () => {
             <VBtn
               block
               type="submit"
-              @click="saveOrder"
             >
               Save
             </VBtn>
