@@ -52,42 +52,40 @@ onMounted(async () => {
         <!-- 👉 Horizontal Form -->
         <VCard title="Products">
           <!-- ========================== MAIN CONTENT ================================= -->
-          <VCardText v-if="isMainPageValue">
-            <div class="d-flex justify-end mb-4">
-              <VBtn
-                type="submit"
-                size="small"
-                @click="newProduct"
-              >
-                <VIcon
-                  icon="bx-book-add"
-                  class="mr-2"
-                />
-                Add Product
-              </VBtn>
-            </div>
+          <div v-if="isMainPageValue">
             <ProductList />
-          </VCardText>
+            <VBtn
+              block
+              class="rounded-t-0"
+              type="submit"
+              @click="newProduct"
+            >
+              <VIcon
+                icon="bx-book-add"
+                class="mr-2"
+              />
+              Add Product
+            </VBtn>
+          </div>
 
           <VCardText v-else>
-            <ProductForm />
+            <VCol col="12">
+              <ProductForm />
+            </VCol>
           </VCardText>
 
 
           <!-- ============ BACK BUTTON ================================= -->
-          <VCol
+          
+          <VBtn
             v-if="!isMainPageValue"
-            cols="12"
+            block
+            class="rounded-t-0"
+            color="primary"
+            @click="backToProductList"
           >
-            <VBtn
-              block
-              color="primary"
-              variant="tonal"
-              @click="backToProductList"
-            >
-              Back to Product List
-            </VBtn>
-          </VCol>
+            Back to Product List
+          </VBtn>
         </VCard>
       </VCol>
 

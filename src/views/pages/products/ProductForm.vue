@@ -1,7 +1,6 @@
 <script setup>
 import Modal from '@/layouts/components/Modal.vue'
 import ProductService from '@/services/ProductService'
-import modalPict from '@images/cards/illustration-john-dark.png'
 import { useStore } from 'vuex'
 
 const isModalOpened = ref(false)
@@ -87,87 +86,88 @@ const checkDigit = () => {
 </script>
 
 <template>
-  <VCardText>
-    <VForm @submit.prevent="saveProduct">
-      <VRow>
-        <VCol cols="12">
-          <VRow no-gutters>
-            <!-- 👉 Product Name -->
-            <VCol
-              cols="12"
-              md="3"
-            >
-              <label for="productName">Product Name</label>
-            </VCol>
+  <VForm @submit.prevent="saveProduct">
+    <VRow>
+      <VCol cols="12">
+        <VRow no-gutters>
+          <!-- 👉 Product Name -->
+          <VCol
+            cols="12"
+            md="3"
+          >
+            <label for="productName">Product Name</label>
+          </VCol>
 
-            <VCol
-              cols="12"
-              md="9"
-            >
-              <VTextField
-                id="productName"
-                v-model="productData.productName"
-                placeholder="Input Your Product Name"
-              />
-            </VCol>
-          </VRow>
-        </VCol>
+          <VCol
+            cols="12"
+            md="9"
+          >
+            <VTextField
+              id="productName"
+              v-model="productData.productName"
+              placeholder="Input Your Product Name"
+            />
+          </VCol>
+        </VRow>
+      </VCol>
 
-        <VCol cols="12">
-          <VRow no-gutters>
-            <!-- 👉 Price -->
-            <VCol
-              cols="12"
-              md="3"
-            >
-              <label for="price">Price</label>
-            </VCol>
+      <VCol cols="12">
+        <VRow no-gutters>
+          <!-- 👉 Price -->
+          <VCol
+            cols="12"
+            md="3"
+          >
+            <label for="price">Price</label>
+          </VCol>
 
-            <VCol
-              cols="12"
-              md="9"
-            >
-              <VTextField
-                id="price"
-                v-model="productData.productPrice"
-                placeholder="5000"
-                persistent-placeholder
-                @keydown="checkDigit"
-              />
-            </VCol>
-          </VRow>
-        </VCol>
+          <VCol
+            cols="12"
+            md="9"
+          >
+            <VTextField
+              id="price"
+              v-model="productData.productPrice"
+              placeholder="5000"
+              persistent-placeholder
+              @keydown="checkDigit"
+            />
+          </VCol>
+        </VRow>
+      </VCol>
 
-        <!-- 👉 submit and reset button -->
-        <VCol
-          offset-md="3"
-          cols="12"
-          md="9"
-          class="d-flex gap-4"
-        >
-          <VBtn type="submit">
-            Save
-          </VBtn>
-        </VCol>
-      </VRow>
-    </VForm>
+      <!-- 👉 submit and reset button -->
+      <VCol
+        offset-md="3"
+        cols="12"
+        md="9"
+        class="d-flex gap-4 justify-end mb-4"
+      >
+        <VBtn type="submit">
+          Save
+        </VBtn>
+      </VCol>
+    </VRow>
+  </VForm>
     
-    <Modal
-      :is-open="isModalOpened"
-      name="first-modal"
-      @modal-close="closeModal"
-    >
-      <template #header />
-      <template #content>
-        <VImg
-          :src="modalPict"
-          height="100px"
-        />
-        <h2>Congratulations!</h2>
-      </template>
-      <template #footer>
-        <h4> {{ (productData.productName) }}</h4> has {{ modalTxt }} Successfully
-      </template>
-    </Modal>
-  </VCardText>
+  <Modal
+    :is-open="isModalOpened"
+    name="first-modal"
+    @modal-close="closeModal"
+  >
+    <template #header />
+    <template #content>
+      <VIcon
+        class="mb-6"
+        color="success"
+        icon="mdi-check-circle-outline"
+        size="128"
+      />
+
+      <h2> {{ productData.productName }} </h2>
+    </template>
+    <template #footer>
+      has been {{ modalTxt }} successfully !
+    </template>
+  </Modal>
 </template>

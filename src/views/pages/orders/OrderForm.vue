@@ -110,175 +110,163 @@ const checkDigit = () => {
 </script>
 
 <template>
-  <VRow>
-    <VCol cols="12">
-      <VForm @submit.prevent="saveOrder">
-        <VRow>
-          <!-- 👉 First Name -->
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <VTextField
-              v-model="orderDataLocal.customerName"
-              label="Customer Name"
-              placeholder="Fulan / Fulana"
-            />
-          </VCol>
+  <VForm @submit.prevent="saveOrder">
+    <VRow class="mx-2">
+      <!-- 👉 First Name -->
+      <VCol
+        cols="6"
+        md="3"
+      >
+        <VTextField
+          v-model="orderDataLocal.customerName"
+          label="Customer Name"
+          placeholder="Fulan / Fulana"
+        />
+      </VCol>
 
-          <!-- 👉 Phone Number -->
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <VTextField
-              v-model="orderDataLocal.phoneNumber"
-              label="Phone Number"
-              placeholder="081234567890"
-              @keydown="checkDigit"
-            />
-          </VCol>
+      <!-- 👉 Phone Number -->
+      <VCol
+        cols="6"
+        md="3"
+      >
+        <VTextField
+          v-model="orderDataLocal.phoneNumber"
+          label="Phone Number"
+          placeholder="081234567890"
+          @keydown="checkDigit"
+        />
+      </VCol>
 
-          <!-- 👉 City -->
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <VTextField
-              v-model="orderDataLocal.city"
-              label="City"
-              placeholder="Ponorogo"
-            />
-          </VCol>
+      <!-- 👉 City -->
+      <VCol
+        cols="6"
+        md="3"
+      >
+        <VTextField
+          v-model="orderDataLocal.city"
+          clearable
+          label="City"
+          placeholder="Ponorogo"
+        />
+      </VCol>
 
-          <!-- 👉 Delivery Options -->
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <VSelect
-              v-model="orderDataLocal.deliveryOptions"
-              label="Delivery Options"
-              placeholder="Choose Yours"
-              :items="deliveryTypes"
-            />
-          </VCol>
-        
-          <VDivider />
+      <!-- 👉 Delivery Options -->
+      <VCol
+        cols="6"
+        md="3"
+      >
+        <VAutocomplete
+          v-model="orderDataLocal.deliveryOptions"
+          label="Delivery Options"
+          placeholder="Choose Yours"
+          :items="deliveryTypes"
+        />
+      </VCol>
+    
+      <VDivider
+        :thickness="2"
+        class="mt-5 border-opacity-25"
+        color="#000"
+      />
   
-          <VCardText class="justify-center">
-            <!-- 👉 Add Item -->
-            <VCol
-              cols="10"
-              class="d-flex mb-4"
-            >
-              <VBtn
-                type="addItem"
-                size="small"
-                color="warning"
-                @click="addField"
-              >
-                <VIcon icon="bx-add-to-queue" />
-                <span class="ms-2">Add Item</span>
-              </VBtn>
-            </VCol>
-
-              
-            <div
-              v-for="(field, index) in fields"
-              :key="index"
-            >
-              <VRow>
-                <!-- 👉 Cake Options -->
-                <VCol
-                  cols="10"
-                  md="4"
-                  class="mb-3"
-                >
-                  <VSelect
-                    v-model="orderDataLocal.cakeOptions"
-                    label="Cake Options"
-                    placeholder="Choose Yours"
-                    :items="['Nastar Klasik', 'Nastar Klepon', 'Sagu Keju', 'Cheezy Hazelnut']"
-                  />
-                </VCol>
-
-                <!-- 👉 Quantity -->
-                <VCol
-                  cols="10"
-                  md="1"
-                >
-                  <VTextField
-                    v-model="orderDataLocal.quantity"
-                    label="Qty"
-                    placeholder="0"
-                    aria-disabled="true"
-                    @keydown="checkDigit"
-                  />
-                </VCol>
-
-                <!-- 👉 Price -->
-                <VCol
-                  cols="10"
-                  md="2"
-                >
-                  <VTextField
-                    v-model="orderDataLocal.price"
-                    label="Price"
-                    placeholder=""
-                    active
-                    disabled
-                  />
-                  <div class="flex-grow-1" />
-                </VCol>
-
-                <!-- 👉 SubTotal -->
-                <VCol
-                  cols="10"
-                  md="2"
-                >
-                  <VTextField
-                    v-model="orderDataLocal.subTotal"
-                    label="SubTotal"
-                    placeholder=""
-                    active
-                    disabled
-                  />
-                  <div class="flex-grow-1" />
-                </VCol>
-                <div v-if="index>0">
-                  <VCol>
-                    <VBtn
-                      type="deleteItem"
-                      class="mt-4"
-                      size="small"
-                      color="error"
-                      @click="removeField"
-                    >
-                      <VIcon icon="bx-basket" />
-                    </VBtn>
-                  </VCol>
-                </div>
-              </VRow>
-            </div>
-          </VCardText>
-      
-
-          <VCol
-            cols="12"
-            class="d-flex gap-4"
+      <!-- ===================== ITEMS SECTION ========================= -->
+      <VCardText class="justify-center">
+        <!-- 👉 Add Item -->
+        <div class="d-flex justify-end mb-4">
+          <VBtn
+            type="addItem"
+            size="small"
+            color="success"
+            @click="addField"
           >
-            <VBtn
-              block
-              type="submit"
-            >
-              Save
-            </VBtn>
-          </VCol>
-        </VRow>
-      </VForm>
+            <VIcon icon="bx-add-to-queue" />
+            <span class="ms-2">Add Item</span>
+          </VBtn>
+        </div>
 
-      <VCardText />
-    </VCol>
-  </VRow>
+        <!-- ============== Looping the Fields ======================== -->              
+        <div
+          v-for="(field, index) in fields"
+          :key="index"
+        >
+          <VCard
+            variant="outlined"
+            color="#3949AB"
+            elevation="12"
+            class="d-flex flex-wrap mb-4"
+          >
+            <VRow class="flex-1-0 pa-3">
+              <!-- 👉 Cake Options -->
+              <VCol
+                cols="5"
+                xs="2"
+              >
+                <VAutocomplete
+                  v-model="orderDataLocal.cakeOptions"
+                  clearable
+                  label="Cake Options"
+                  placeholder="Choose Yours"
+                  :items="['Nastar Klasik', 'Nastar Klepon', 'Sagu Keju', 'Cheezy Hazelnut']"
+                />
+              </VCol>
+
+              <!-- 👉 Quantity -->
+              <VCol cols="2">
+                <VTextField
+                  v-model="orderDataLocal.quantity"
+                  label="Qty"
+                  placeholder="0"
+                  aria-disabled="true"
+                  @keydown="checkDigit"
+                />
+              </VCol>
+
+              <!-- 👉 Price -->
+              <VCol cols="2">
+                <VTextField
+                  v-model="orderDataLocal.price"
+                  label="Price"
+                  placeholder=""
+                  active
+                  disabled
+                />
+              </VCol>
+
+              <!-- 👉 SubTotal -->
+              <VCol cols="3">
+                <VTextField
+                  v-model="orderDataLocal.subTotal"
+                  label="SubTotal"
+                  placeholder=""
+                  active
+                  disabled
+                />
+              </VCol>
+            </VRow>
+
+            <div>
+              <VBtn
+                v-if="index > 0"
+                
+                type="deleteItem"
+                size="small"
+                class="rounded-s-0 h-100 "
+                color="error"
+                @click="removeField"
+              >
+                <VIcon icon="bx-basket" />
+              </VBtn>
+            </div>
+          </VCard>
+        </div>
+      </VCardText>
+    </VRow>
+    <VBtn
+      block
+      class="d-flex y-0 rounded-t-0"
+      type="submit"
+    >
+      Save
+    </VBtn>
+  </VForm>
 </template>

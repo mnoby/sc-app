@@ -61,9 +61,7 @@ import OrderForm from '@/views/pages/orders/OrderForm.vue'
       <VCol cols="12">
         <!-- 👉 Multiple Column -->
         <VCard title="Order Details">
-          <VCardText>
-            <OrderForm />
-          </VCardText>
+          <OrderForm />
         </VCard>
       </VCol>
     </VRow>
