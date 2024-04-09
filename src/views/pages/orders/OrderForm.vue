@@ -1,124 +1,276 @@
+<!-- eslint-disable promise/no-nesting -->
 <script setup>
+import CityService from '@/services/CityService'
 import DeliveryService from '@/services/DeliveryService'
 import OrderService from '@/services/OrderService'
+import ProductService from '@/services/ProductService'
+import { v4 as uuidv4 } from 'uuid'
 import { VCardText } from 'vuetify/lib/components/index.mjs'
 
-const orderData = {
+const YYYYMMDD = new Date().toISOString()
+const timestamp = new Date().toLocaleString()
+const splitDate= YYYYMMDD.substring(0, 10).split('-')
+
+const fullYYYY = `${splitDate[0]}`
+const fullMMDD = `${splitDate[1]}${splitDate[2]}`
+
+console.log(uuidv4().substring(0, 4))
+
+const orderDetailsFields = ref([
+  { 
+    productName: '', 
+    price: '', 
+    quantity: '', 
+    subtotal: '',  
+  },
+])
+
+const orderData = ref({
+  orderNumber: 'TBD',
   customerDetails: {
     customerName: '',
     phoneNumber: '',
     address: '',
     city: '',
+    cityCode: '',
   },  
-  orderDetails: {
-    quantity: '',
-    price: '1000',
-    subTotal: '2000',
-    cakeOptions: 'Choose Yours',
-  },
-  deliveryOptions: 'By Courier',
-}
 
-// ============================  GET DELIVERY OPTIONS ============================
-const selectedItem = ref(null)
+  deliveryName: '',
+  note: '',
+})
 
-// Fetch data from Firestore on component mount
-let deliveryTypes = ref([])
+watch( () => orderData.value.orderDetails,
+  count => {
+    console.log(`count is: ${count}`)
+  })
+
+
+const deliveryTypes = ref()
+const products=ref()
+const cities=ref()
+const cityNames=ref()
+const productNames=ref()
+const orderCount=ref()
+
+// Fetch Datas from DB on Mounted
 onMounted(async () => {
   try {
-    const response = await DeliveryService.getAll().get()
 
-    deliveryTypes.value = response.docs.map(doc => (doc.data().delivery_type))
+    //Get Cities Data
+    const resCity = await CityService.getAll().get()
+
+    cities.value = resCity.docs.map(doc => ({ id: doc.id, cityName: doc.data().name }))
+    cityNames.value = resCity.docs.map(doc => (doc.data().name))
+
+    //Get delivery_types Data
+    const resDelivery = await DeliveryService.getAll().get()
+
+    deliveryTypes.value = resDelivery.docs.map(doc => (doc.data().name))
+    
+    //Get Latest Order Number
+    const resOrder = await OrderService.getLatest('order_no', 'desc', 1).get()
+
+    orderCount.value = resOrder.docs.map(doc => (doc.data().order_no ))
+    
+    //Get Products Data
+    const resProduct = await ProductService.getAll('name').get()
+
+    products.value = resProduct.docs.map(doc => ({ productName: doc.data().name, productPrice: doc.data().price }))
+    productNames.value = resProduct.docs.map(doc => (doc.data().name))
+
+    // Parse Order Number
+    orderNumberParser(orderCount.value)
+
   } catch (error) {
     console.error('Error fetching delivery options: ', error)
   }
 })
 
-// ============================  END GET DELIVERY OPTIONS ============================
-
 // ============================  SAVE ORDER FLOW ============================
 const saveOrder = () => {
+  const orderDetArray=[]
+  let total = 0
+  let x = 0
+
+  // remapping the order details objects name as the payload
+  for (let idx in orderDetailsFields.value){
+    const order = orderDetailsFields.value[idx]
+    let y =  order.subtotal
+    total = x + y
+    x= total
+    orderDetArray.push({ product_name: order.productName, price: order.price, qty: parseInt(order.quantity), subtotal: order.subtotal })
+  }
+  console.log(`orderDetArray ${JSON.stringify(orderDetArray)}`)
+
+  
   var data = {
+    order_no: orderData.value.orderNumber,
     customer_details: {
-      customer_name: orderData.customerDetails.customerName,
-      phone_number: orderData.customerDetails.phoneNumber,
-      address: orderData.customerDetails.address,
-      city: orderData.customerDetails.city,
+      name: orderData.value.customerDetails.customerName,
+      phone: orderData.value.customerDetails.phoneNumber,
+      address: orderData.value.customerDetails.address,
+      city: orderData.value.customerDetails.city,
     },
-    order_details: {
-      quantity: orderData.orderDetails.quantity,
-      price: orderData.orderDetails.price,
-      sub_total: orderData.orderDetails.subTotal,
-      cake_options: orderData.orderDetails.cakeOptions,
-    },
-    delivery_options: orderData.orderDetails.deliveryOptions,
+    order_details: orderDetArray,
+    delivery_types: orderData.value.deliveryName,
+    note: orderData.value.note,
+    total: total,
+    order_date: timestamp,
+    active: true,
   }
 
   OrderService.create(data)
     .then(() => {
       console.log("Created new item successfully!")
-      console.log(orderData.customerName)
+      console.log(orderData.value.orderNumber)
     })
     .catch(e => {
       console.log(e)
-    })
+    })  
 }
-    
-const newOrder = () => {
-  this.submitted = false
-  this.order = {
-    customerName: '',
-    phoneNumber: '',
-    city: '',
-    quantity: 2,
-    price: 1000,
-    subTotal: 2000,
-    deliveryOptions: '',
-    cakeOptions: '',
-  }
-}
+  
 
 // ============================  END SAVE ORDER FLOW ============================
 
 
-// ============= ADD ORDER FIELDS =============================== 
-const fields = ref([{ cakeOptions: '', quantity: '', price: '', subTotal: ''  }])
+// ============= ADD ORDER orderDetailsFields =============================== 
+
+// Parsing Order Number
+const orderNumberParser = number => {
+  const splitNumber =number.toString().split('-')
+  const  nextNumber = parseInt(splitNumber[3]) + 1
+
+  if (nextNumber.toString.length == 1){
+    orderCount.value.parsed = `000${nextNumber}`
+  } else if (nextNumber.toString.length == 2){
+    orderCount.value.parsed = `00${nextNumber}`
+  } else if(nextNumber.toString.length == 3){
+    orderCount.value.parsed = `0${nextNumber}`
+  } else {
+    orderCount.value.parsed = nextNumber
+  }
+}
+
+// Find City Code
+const getCityCode = cityName => {
+  const findCity = cities.value.find(city => city.cityName == cityName)
+
+  orderData.value.customerDetails.cityCode = findCity.id
+}
+
+const generateNewOrderNumber = cityName => {
+// Parse the Latest Order Number
+  getCityCode(cityName)
+  console.log(`city length >>> ${orderData.value.customerDetails.cityCode}`)
+
+  const cityCode = orderData.value.customerDetails.cityCode
+  if(orderData.value.customerDetails.cityCode.length > 0 ){
+    orderData.value.orderNumber = `${fullYYYY}-${fullMMDD}-${cityCode}-${orderCount.value.parsed}`
+  } else {
+    orderData.value.orderNumber = `${fullYYYY}-${fullMMDD}-undefined-${orderCount.value.parsed}`
+  }
+
+}
+
 
 // Method to add a new field
 const addField = () => {
-  fields.value.push({ cakeOptions: '', quantity: '', price: '', subTotal: '' })
+  orderDetailsFields.value.push({ productName: '', price: '', quantity: '', subtotal: '' })
+  console.log(`Length orderDetails field ${orderDetailsFields.value.length}`)
 }
 
 // Method to remove a field at a given index
 const removeField = index => {
-  fields.value.splice(index, 1)
+  orderDetailsFields.value.splice(index, 1)
+  console.log(`Length orderDetails field ${orderDetailsFields.value.length}`)
+
 }
 
-// ============= END ADD ORDER FIELDS =============================== 
+// ============= END ADD ORDER orderDetailsFields =============================== 
 
+// for debugginf purpose
 const idx = index => {
   console.log(`Index :`, index)
 }
 
-const orderDataLocal = ref(orderData)
-
+// Only NUmber Allowed Function
 const checkDigit = () => {
   if (event.key.length === 1 && isNaN(Number(event.key))) {
     event.preventDefault()
   }
 }
+
+// Store selected Product Price
+const updatePrice = (selectedProductName, idx) => {  
+  if(selectedProductName!= null && selectedProductName!=''){
+
+    console.log(`selected prodcut >>>> ${JSON.stringify(selectedProductName)}`)
+    
+    const selectedProduct = products.value.find(product => product.productName == selectedProductName)
+    
+    orderDetailsFields.value[idx].price = selectedProduct.productPrice
+  }else {
+    orderDetailsFields.value[idx].price = '0'
+  }
+}
+
+const calculateSubTotal = (price, quantity, idx) => {
+  if(quantity && price ){
+    orderDetailsFields.value[idx].subtotal = parseInt(price) * parseInt(quantity)
+  } else if(quantity == ''){
+    orderDetailsFields.value[idx].subtotal = 0 * parseInt(price)
+  }else {
+    orderDetailsFields.value[idx].subtotal = 0 * parseInt(quantity)
+  }
+}
+
+
+const debuggerBtn = () => {
+  console.log(`order detail >>>> ${JSON.stringify(orderDetailsFields.value)}`)
+
+}
+
+const formatNumber = number => {
+  return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+}
 </script>
 
 <template>
-  <VForm @submit.prevent="saveOrder">
+  <VBtn
+    type="debug"
+    size="small"
+    color="success"
+    @click="debuggerBtn"
+  >
+    <VIcon icon="bx-add-to-queue" />
+    <span class="ms-2">Check Order Details</span>
+  </VBtn> 
+  
+
+  <VForm @submit.prevent="">
     <VRow class="mx-2">
-      <!-- 👉 First Name -->
+      <!-- 👉 Order Number -->
       <VCol
-        cols="6"
-        md="3"
+        cols="12"
+        md="6"
+        sm="12"
       >
         <VTextField
-          v-model="orderDataLocal.customerName"
+          v-model="orderData.orderNumber"
+          label="Order Number"
+          variant="solo"
+          disabled
+        />
+      </VCol>
+
+      <!-- 👉 First Name -->
+      <VCol
+        cols="12"
+        md="6"
+        sm="6"
+      >
+        <VTextField
+          v-model="orderData.customerDetails.customerName"
           label="Customer Name"
           placeholder="Fulan / Fulana"
         />
@@ -126,40 +278,70 @@ const checkDigit = () => {
 
       <!-- 👉 Phone Number -->
       <VCol
-        cols="6"
-        md="3"
+        cols="12"
+        md="6"
+        sm="6"
       >
         <VTextField
-          v-model="orderDataLocal.phoneNumber"
+          v-model="orderData.customerDetails.phoneNumber"
           label="Phone Number"
           placeholder="081234567890"
           @keydown="checkDigit"
         />
       </VCol>
 
-      <!-- 👉 City -->
+      <!-- 👉 Address -->
       <VCol
-        cols="6"
-        md="3"
+        cols="12"
+        md="6"
+        sm="6"
       >
         <VTextField
-          v-model="orderDataLocal.city"
+          v-model="orderData.customerDetails.address"
+          label="Address"
+        />
+      </VCol>
+
+      <!-- 👉 City -->
+      <VCol
+        cols="12"
+        md="6"
+        sm="6"
+      >
+        <VAutocomplete
+          v-model="orderData.customerDetails.city"
           clearable
           label="City"
-          placeholder="Ponorogo"
+          placeholder="Pick City"
+          :items="cityNames"
+          @update:model-value="generateNewOrderNumber(orderData.customerDetails.city)"
         />
       </VCol>
 
       <!-- 👉 Delivery Options -->
       <VCol
-        cols="6"
-        md="3"
+        cols="12"
+        md="6"
+        sm="6"
       >
         <VAutocomplete
-          v-model="orderDataLocal.deliveryOptions"
+          v-model="orderData.deliveryName"
+          clearable
           label="Delivery Options"
           placeholder="Choose Yours"
           :items="deliveryTypes"
+        />
+      </VCol>
+
+      <!-- 👉 Note -->
+      <VCol
+        cols="12"
+        md="6"
+        sm="6"
+      >
+        <VTextField
+          v-model="orderData.note"
+          label="Note"
         />
       </VCol>
     
@@ -170,7 +352,7 @@ const checkDigit = () => {
       />
   
       <!-- ===================== ITEMS SECTION ========================= -->
-      <VCardText class="justify-center">
+      <VCardText>
         <!-- 👉 Add Item -->
         <div class="d-flex justify-end mb-4">
           <VBtn
@@ -184,9 +366,9 @@ const checkDigit = () => {
           </VBtn>
         </div>
 
-        <!-- ============== Looping the Fields ======================== -->              
+        <!-- ============== Looping the orderDetailsFields ======================== -->              
         <div
-          v-for="(field, index) in fields"
+          v-for="(field, index) in orderDetailsFields"
           :key="index"
         >
           <VCard
@@ -196,46 +378,62 @@ const checkDigit = () => {
             class="d-flex flex-wrap mb-4"
           >
             <VRow class="flex-1-0 pa-3">
-              <!-- 👉 Cake Options -->
+              <!-- 👉 Pick Product -->
               <VCol
-                cols="5"
-                xs="2"
+                cols="9"
+                md="5"
+                sm="4"
               >
                 <VAutocomplete
-                  v-model="orderDataLocal.cakeOptions"
+                  v-model="field.productName"
+                  label="Product Name"
+                  placeholder="Please Pick"
                   clearable
-                  label="Cake Options"
-                  placeholder="Choose Yours"
-                  :items="['Nastar Klasik', 'Nastar Klepon', 'Sagu Keju', 'Cheezy Hazelnut']"
-                />
-              </VCol>
-
-              <!-- 👉 Quantity -->
-              <VCol cols="2">
-                <VTextField
-                  v-model="orderDataLocal.quantity"
-                  label="Qty"
-                  placeholder="0"
-                  aria-disabled="true"
-                  @keydown="checkDigit"
-                />
+                  :items="productNames"
+                  @update:model-value="updatePrice(field.productName, index); calculateSubTotal(field.price, field.quantity, index)"
+                /> 
               </VCol>
 
               <!-- 👉 Price -->
-              <VCol cols="2">
+              <VCol
+                cols="9"
+                md="2"
+                sm="4"
+              >
                 <VTextField
-                  v-model="orderDataLocal.price"
+                  v-model="field.price"
                   label="Price"
-                  placeholder=""
+                  placeholder="0"
                   active
                   disabled
                 />
               </VCol>
+              
+              
+              <!-- 👉 Quantity -->
+              <VCol
+                cols="9"
+                md="2"
+                sm="4"
+              >
+                <VTextField
+                  v-model="field.quantity"
+                  label="Qty"
+                  placeholder="0"
+                  aria-disabled="true"
+                  @keydown="checkDigit"
+                  @keyup="calculateSubTotal(field.price, field.quantity, index)"
+                />
+              </VCol>
 
               <!-- 👉 SubTotal -->
-              <VCol cols="3">
+              <VCol
+                cols="9"
+                md="3"
+                sm="4"
+              >
                 <VTextField
-                  v-model="orderDataLocal.subTotal"
+                  v-model="field.subtotal"
                   label="SubTotal"
                   placeholder=""
                   active
@@ -247,10 +445,10 @@ const checkDigit = () => {
             <div>
               <VBtn
                 v-if="index > 0"
-                
+                block
                 type="deleteItem"
                 size="small"
-                class="rounded-s-0 h-100 "
+                class="rounded-s-0 h-100"
                 color="error"
                 @click="removeField"
               >
@@ -265,6 +463,7 @@ const checkDigit = () => {
       block
       class="d-flex y-0 rounded-t-0"
       type="submit"
+      @click="saveOrder"
     >
       Save
     </VBtn>

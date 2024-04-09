@@ -13,9 +13,9 @@ const isMainPageValue = computed(() => store.state.isMainPage)
 
 onMounted(async () => {
   try {
-    const response = await ProductService.getAll().get()
+    const response = await ProductService.getAll('name').get()
 
-    productData.value = response.docs.map(doc => ({ product_id: doc.id, product_name: doc.data().p_name, product_price: doc.data().p_price }))
+    productData.value = response.docs.map(doc => ({ product_id: doc.id, product_name: doc.data().name, product_price: doc.data().price }))
   } catch (error) {
     console.error('Error fetching delivery options: ', error)
   }
@@ -143,17 +143,12 @@ const formatNumber = number => {
         </div>
 
         <div v-else>
-          <VAvatar
-            color="primary"
-            variant="tonal"
-            size="50"
-            class="mb-4"
-          >
-            <VIcon
-              size="2rem"
-              icon="bx-check-circle"
-            />
-          </VAvatar>
+          <VIcon
+            class="mb-6"
+            color="success"
+            icon="mdi-check-circle-outline"
+            size="128"
+          />
         </div>
       </template>
       <template #footer>

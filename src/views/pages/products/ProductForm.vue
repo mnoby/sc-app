@@ -45,8 +45,8 @@ const saveProduct = () => {
 // ============================  SAVE ORDER FLOW ============================
 
   var data = {
-    p_name: productData.value.productName,
-    p_price: parseInt(productData.value.productPrice),
+    name: productData.value.productName,
+    price: parseInt(productData.value.productPrice),
   }
 
   if (updateValues== null){

@@ -1,6 +1,6 @@
 import firebase from "../firebase"
 
-const db = firebase.collection("delivery_options")
+const db = firebase.collection("delivery_types")
 
 class DeliveryService {
   getAll() {

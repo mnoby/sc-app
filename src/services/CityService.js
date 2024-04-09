@@ -1,10 +1,10 @@
 import firebase from "../firebase"
 
-const db = firebase.collection("products")
+const db = firebase.collection("cities")
 
-class ProductService {
-  getAll(value) {
-    return db.orderBy(value)
+class DeliveryService {
+  getAll() {
+    return db
   }
 
   create(type) {
@@ -20,5 +20,4 @@ class ProductService {
   }
 }
 
-export default new ProductService()
-
+export default new DeliveryService()

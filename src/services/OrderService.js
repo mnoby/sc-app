@@ -3,8 +3,12 @@ import firebase from "../firebase"
 const db = firebase.collection("/orders")
 
 class OrderService {
-  getAll() {
-    return db
+  getAll(value, sort) {
+    return db.orderBy(value, sort)
+  }
+
+  getLatest(value, sort, limit) {
+    return db.orderBy(value, sort).limit(limit)
   }
 
   create(order) {
