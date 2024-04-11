@@ -2,7 +2,7 @@ import firebase from "../firebase"
 
 const db = firebase.collection("cities")
 
-class DeliveryService {
+class CityService {
   getAll() {
     return db
   }
@@ -20,4 +20,4 @@ class DeliveryService {
   }
 }
 
-export default new DeliveryService()
+export default new CityService()

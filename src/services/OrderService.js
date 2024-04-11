@@ -1,3 +1,4 @@
+
 import firebase from "../firebase"
 
 const db = firebase.collection("/orders")
@@ -22,6 +23,6 @@ class OrderService {
   delete(id) {
     return db.doc(id).delete()
   }
-}
 
+}
 export default new OrderService()

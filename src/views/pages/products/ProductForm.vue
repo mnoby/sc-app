@@ -21,8 +21,8 @@ const updateValues =store.state.updateValues
 const submitted=ref(false)
 
 const productData = ref({
-  productName: '',
-  productPrice: '',
+  name: '',
+  price: '',
 })
 
 if (updateValues!= null){
@@ -44,15 +44,10 @@ const checks = () => {
 const saveProduct = () => {
 // ============================  SAVE ORDER FLOW ============================
 
-  var data = {
-    name: productData.value.productName,
-    price: parseInt(productData.value.productPrice),
-  }
-
   if (updateValues== null){
     modalTxt = 'Added'
 
-    ProductService.create(data)
+    ProductService.create(productData.value)
       .then(() => {
         console.log("Created new item successfully!")
       })
@@ -61,8 +56,8 @@ const saveProduct = () => {
       })
   } else{
     modalTxt = 'Updated'
-    ProductService.update(updateValues.id, data).then(() => {
-      console.log(`AJJAJAJA ${JSON.stringify(data)}`)
+    ProductService.update(updateValues.id, productData.value).then(() => {
+      console.log(`AJJAJAJA ${JSON.stringify(productData.value)}`)
     })
   }
   isModalOpened.value = true
@@ -70,11 +65,11 @@ const saveProduct = () => {
 }
     
 const refreshField = () => {
-  submitted.value= false,  productData.value = {
-    productName: '',
-    productPrice: '',
+  submitted.value= false,  
+  productData.value = {
+    name: '',
+    price: '',
   }
-  productData.value = productData.value
 }
 
 // ============================  END SAVE ORDER FLOW ============================
@@ -104,7 +99,7 @@ const checkDigit = () => {
           >
             <VTextField
               id="productName"
-              v-model="productData.productName"
+              v-model="productData.name"
               placeholder="Input Your Product Name"
             />
           </VCol>
@@ -127,7 +122,7 @@ const checkDigit = () => {
           >
             <VTextField
               id="price"
-              v-model="productData.productPrice"
+              v-model="productData.price"
               placeholder="5000"
               persistent-placeholder
               @keydown="checkDigit"
@@ -164,7 +159,7 @@ const checkDigit = () => {
         size="128"
       />
 
-      <h2> {{ productData.productName }} </h2>
+      <h2> {{ productData.name }} </h2>
     </template>
     <template #footer>
       has been {{ modalTxt }} successfully !

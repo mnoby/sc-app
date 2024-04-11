@@ -15,7 +15,7 @@ onMounted(async () => {
   try {
     const response = await ProductService.getAll('name').get()
 
-    productData.value = response.docs.map(doc => ({ product_id: doc.id, product_name: doc.data().name, product_price: doc.data().price }))
+    productData.value = response.docs.map(doc => ({ id: doc.id, name: doc.data().name, price: doc.data().price }))
   } catch (error) {
     console.error('Error fetching delivery options: ', error)
   }
@@ -30,8 +30,8 @@ const updateProduct=(productId, productName, productPrice)=>{
   let data = {
     id: productId,
     details: {
-      productName: productName,
-      productPrice: productPrice,
+      name: productName,
+      price: productPrice,
     },
   }
   store.commit('setMainPage', false)
@@ -88,13 +88,13 @@ const formatNumber = number => {
       <tbody>
         <tr
           v-for="(product) in productData"
-          :key="product.product_id"
+          :key="product.id"
         >
           <td>
-            {{ product.product_name }}
+            {{ product.name }}
           </td>
           <td class="text-center">
-            {{ formatNumber(product.product_price) }}
+            {{ formatNumber(product.price) }}
           </td>
           <td>
             <div class="d-flex align-center justify-center w-55 gap-x-2">
@@ -102,7 +102,7 @@ const formatNumber = number => {
                 type="updateProduct"
                 size="x-small"
                 color="warning"
-                @click="updateProduct(product.product_id, product.product_name, product.product_price)"
+                @click="updateProduct(product.id, product.name, product.price)"
               >
                 <VIcon icon="bx-pencil" />
               </VBtn>
@@ -113,7 +113,7 @@ const formatNumber = number => {
                 type="deleteProduct"
                 size="x-small"
                 color="error"
-                @click="openModal(product.product_id, product.product_name)"
+                @click="openModal(product.id, product.name)"
               >
                 <VIcon icon="bx-trash" />
               </VBtn>
