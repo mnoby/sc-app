@@ -38,7 +38,7 @@ const orderData = ref({
   paid: false,
 })
 
-watch( () => orderData.value.orderDetails,
+watch( () => orderDetails.value,
   count => {
     console.log(`count is: ${count}`)
   })
@@ -51,7 +51,6 @@ const cityNames=ref()
 const cityCode=ref()
 const productNames=ref()
 const orderCount=ref()
-const isModalOpened = ref(false)
 const dialog=ref(false)
 const dialog2=ref(false)
 const dialog3=ref(false)
@@ -79,14 +78,6 @@ onMounted(async () => {
   getOrders()
 
 })
-
-const openModal = () => {
-  isModalOpened.value = true
-}
-
-const closeModal = () => {
-  isModalOpened.value = false
-}
 
 // Send Order Data to Database
 const saveOrder = () => {
@@ -410,6 +401,7 @@ const formatNumber = number => {
                     label="Product Name"
                     placeholder="Please Pick"
                     clearable
+                    hide-selected
                     density="compact"
                     :items="productNames"
                     @update:model-value="updatePrice(field.product_name, index); calculateSubTotal(field.price, field.qty, index)"
