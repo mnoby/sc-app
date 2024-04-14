@@ -16,20 +16,20 @@ const orderDetails = ref([
   { 
     product_name: null, 
     price: '', 
-    qty: '', 
+    qty: null, 
     subtotal: '',  
   },
 ])
 
 const orderData = ref({
-  order_no: 'TBD',
+  order_no: '',
   customer_details: {
     name: '',
     phone: '',
     address: '',
     city: null,
   },
-  order_details: orderDetails.value,
+  order_details: [],
   delivery_type: null,
   note: '',
   total: '',
@@ -46,21 +46,18 @@ watch( () => orderDetails.value,
 
 const deliveryTypes = ref()
 const products=ref()
+const deleted=ref([])
 const cities=ref()
-const cityNames=ref()
 const cityCode=ref()
-const productNames=ref()
 const orderCount=ref()
 const dialog=ref(false)
-const dialog2=ref(false)
-const dialog3=ref(false)
+const myForm = ref()
 
 // Fetch Datas from DB on Mounted
 onMounted(async () => {
   //Get Cities Data
   await CityService.getAll().get().then(res => {
     cities.value = res.docs.map(doc => ({ id: doc.id, cityName: doc.data().name }))
-    cityNames.value = res.docs.map(doc => (doc.data().name))
   })
 
   //Get delivery_types Data
@@ -70,8 +67,7 @@ onMounted(async () => {
     
   //Get Products Data
   await ProductService.getAll('name').get().then(res => {
-    products.value = res.docs.map(doc => ({ productName: doc.data().name, productPrice: doc.data().price }))
-    productNames.value = res.docs.map(doc => (doc.data().name))
+    products.value = res.docs.map(doc => (doc.data()))
   })
 
   // Fetch Orders Data
@@ -79,19 +75,34 @@ onMounted(async () => {
 
 })
 
+const rules = [
+  value => {
+    if (value) return true
+    
+    return 'Required.'
+  },
+]
+
 // Send Order Data to Database
 const saveOrder = () => {
-  OrderService.create(orderData.value)
-    .then(() => {
-      dialog.value = true
-      console.log("Created new item successfully!")
-
-      //reset all fields
-      refreshField()
-    })
-    .catch(e => {
-      console.log(e)
-    })  
+  myForm.value?.validate().then(({ valid: isValid }) => {
+    console.log(`tetoot >>> ${isValid}`)
+    if(isValid){
+      OrderService.create(orderData.value)
+        .then(() => {
+          dialog.value = true
+          console.log("Created new item successfully!")
+        
+          //reset all fields
+          resetForm()
+        })
+        .catch(e => {
+          console.log(e)
+        }) 
+    } else {
+      console.log(`masih ada yang ksong tuh`)
+    }
+  })
 
 }
 
@@ -104,8 +115,6 @@ const getOrders = () => {
     // Parse Order Number
     orderNumberParser(orderCount.value)
   })
-
-
 }
 
 // Parsing Order Number
@@ -132,9 +141,9 @@ const orderNumberParser = number => {
 
 // Find City Code
 const getCityCode = cityName => {
-  const findCity = cities.value.find(city => city.cityName == cityName)
+  const res = cities.value.find(city => city.cityName == cityName)
 
-  cityCode.value = findCity.id
+  cityCode.value = res.id
 }
 
 const generateNewOrderNumber = cityName => {
@@ -149,17 +158,12 @@ const generateNewOrderNumber = cityName => {
 
 // Method to add a new field
 const addField = () => {
-  orderDetails.value.push({ product_name: null, price: '', qty: '', subtotal: '' })
+  orderDetails.value.push({ product_name: null, price: '', qty: null, subtotal: '' })
 }
 
 // Method to remove a field at a given index
 const removeField = index => {
   orderDetails.value.splice(index, 1)
-}
-
-// for debugginf purpose
-const idx = index => {
-  console.log(`Index :`, index)
 }
 
 // Only Number Allowed Function
@@ -169,21 +173,45 @@ const checkDigit = () => {
   }
 }
 
+//Push cleared Selected Product into products obj
+const returnProduct=object=>{
+  console.log(`execute return product ${JSON.stringify(object)}`)
+
+  // const res = deleted.value.find(obj => obj.name == object.name)
+  // const resIdx = deleted.value.findIndex(obj => obj.name == object.name)
+
+  // products.value.push(res)
+  // deleted.value.splice(resIdx, 1)
+  // products.value.sort()
+}
+
 // Store selected Product Price
 const updatePrice = (selectedProductName, idx) => {  
+  // console.log(`print >> ${selectedProductName}, ${idx}`)
+
   if(selectedProductName!= null && selectedProductName!=''){
-    const selectedProduct = products.value.find(product => product.productName == selectedProductName)
+    const res = products.value.find(product => product.name == selectedProductName)
+
+    const res2 = products.value.findIndex(product => product.name == selectedProductName)
+
+    orderDetails.value[idx].price = res.price
   
-    orderDetails.value[idx].price = selectedProduct.productPrice
+    //get index of selectedproductname
+
+    // deleted.value.push(res)
+    // console.log(`idndn ${res2}`)
+
+    // products.value.splice(res2, 1)
   }else {
     orderDetails.value[idx].price = '0'
   }
 }
 
+// Sum subtotal for each item of order function
 const calculateSubTotal = (price, quantity, idx ) => {
   if(quantity && price ){
     orderDetails.value[idx].subtotal = parseInt(price) * parseInt(quantity)
-  } else if(quantity == ''){
+  } else if(quantity == undefined){
     orderDetails.value[idx].subtotal = 0 * parseInt(price)
   }else {
     orderDetails.value[idx].subtotal = 0 * parseInt(quantity)
@@ -192,21 +220,18 @@ const calculateSubTotal = (price, quantity, idx ) => {
   calculateTotal(orderDetails.value)
 }
 
+// Summ all subtotals function
 const calculateTotal = srcObj => {
   let total = 0
-  let x=0, y = 0
 
   for (let idx in srcObj){
-    const order = srcObj[idx]
-
-    y = order.subtotal
-    total = x + y
-    x= total
+    total += srcObj[idx].subtotal
   }
   orderData.value.total= total
 }
 
-const refreshField = () => {
+// Reset All Fields and re-fetch data from DB
+const resetForm = () => {
   getOrders()
   orderDetails.value = [{ 
     product_name: null, 
@@ -230,30 +255,37 @@ const refreshField = () => {
   }
 }
 
-const debuggerBtn = () => {
-  console.log(`order detail >>>> ${JSON.stringify(orderDetails.value)}`)
 
-}
-
+// Add Numbet Delimiter Function
 const formatNumber = number => {
   return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+}
+
+// for debugginf purpose
+const debuggerBtn = () => {
+  // console.log(`order detail >>>> ${JSON.stringify(orderDetails.value)}`)
+  console.log(`products >>>> ${JSON.stringify(products.value.length)}`)
+  console.log(`deleted >>>> ${JSON.stringify(deleted.value)}`)
+  console.log(`order detail >>>> ${JSON.stringify(orderDetails.value)}`)
 }
 </script>
 
 <template>
-  <!--
-    <VBtn
+  <VBtn
     type="debug"
     size="small"
     color="success"
     @click="debuggerBtn"
-    >
+  >
     <VIcon icon="bx-add-to-queue" />
     <span class="ms-2">Check Order Details</span>
-    </VBtn>  
-  -->  
+  </VBtn>  
+   
 
-  <VForm @submit.prevent="">
+  <VForm
+    ref="myForm"
+    @submit.prevent=""
+  >
     <VRow class="mx-2">
       <!-- 👉 Order Number -->
       <VCol
@@ -264,8 +296,11 @@ const formatNumber = number => {
         <VTextField
           v-model="orderData.order_no"
           label="Order Number"
+          placeholder="TBD"
           variant="solo"
-          disabled
+          density="compact"
+          active
+          readonly
         />
       </VCol>
 
@@ -278,6 +313,7 @@ const formatNumber = number => {
         <VTextField
           v-model="orderData.customer_details.name"
           label="Customer Name"
+          density="compact"
           placeholder="Fulan / Fulana"
         />
       </VCol>
@@ -292,6 +328,8 @@ const formatNumber = number => {
           v-model="orderData.customer_details.phone"
           label="Phone Number"
           placeholder="081234567890"
+          density="compact"
+          :rules="rules"
           @keydown="checkDigit"
         />
       </VCol>
@@ -305,6 +343,7 @@ const formatNumber = number => {
         <VTextField
           v-model="orderData.customer_details.address"
           label="Address"
+          density="compact"
         />
       </VCol>
 
@@ -316,10 +355,14 @@ const formatNumber = number => {
       >
         <VAutocomplete
           v-model="orderData.customer_details.city"
-          clearable
           label="City"
           placeholder="Pick City"
-          :items="cityNames"
+          density="compact"
+          :rules="rules"
+          :items="cities"
+          item-value="cityName"
+          item-title="cityName"
+          clearable
           @update:model-value="generateNewOrderNumber(orderData.customer_details.city)"
         />
       </VCol>
@@ -335,6 +378,8 @@ const formatNumber = number => {
           clearable
           label="Delivery Options"
           placeholder="Choose Yours"
+          density="compact"
+          :rules="rules"
           :items="deliveryTypes"
         />
       </VCol>
@@ -348,6 +393,7 @@ const formatNumber = number => {
         <VTextField
           v-model="orderData.note"
           label="Note"
+          density="compact"
         />
       </VCol>
     
@@ -401,10 +447,12 @@ const formatNumber = number => {
                     label="Product Name"
                     placeholder="Please Pick"
                     clearable
-                    hide-selected
                     density="compact"
-                    :items="productNames"
-                    @update:model-value="updatePrice(field.product_name, index); calculateSubTotal(field.price, field.qty, index)"
+                    :rules="rules"
+                    :items="products"
+                    item-title="name"
+                    :item-value="updatePrice(field.product_name,index)"
+                    @update:model-value="calculateSubTotal(field.price, field.qty, index)"
                   />
                 </VCol>
 
@@ -416,11 +464,12 @@ const formatNumber = number => {
                 >
                   <VTextField
                     v-model="field.price"
+                    class="border-"
                     label="Price"
                     placeholder="0"
                     density="compact"
                     active
-                    disabled
+                    readonly
                   />
                 </VCol>
               
@@ -435,6 +484,7 @@ const formatNumber = number => {
                     label="Qty"
                     placeholder="0"
                     density="compact"
+                    :rules="rules"
                     @keydown="checkDigit"
                     @keyup="calculateSubTotal(field.price, field.qty, index)"
                   />
@@ -521,3 +571,4 @@ const formatNumber = number => {
     </VDialog>
   </div>
 </template>
+

@@ -4,6 +4,8 @@ import VerticalNavLayout from '@layouts/components/VerticalNavLayout.vue'
 import VerticalNavLink from '@layouts/components/VerticalNavLink.vue'
 import { useTheme } from 'vuetify'
 
+import UserProfile from './UserProfile.vue'
+
 // Components
 import Footer from '@/layouts/components/Footer.vue'
 import NavbarThemeSwitcher from '@/layouts/components/NavbarThemeSwitcher.vue'
@@ -61,7 +63,7 @@ const vuetifyTheme = useTheme()
 
         <NavbarThemeSwitcher class="me-2" />
 
-        <!-- <UserProfile /> -->
+        <UserProfile /> 
       </div>
     </template>
 
