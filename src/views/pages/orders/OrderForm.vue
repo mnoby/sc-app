@@ -29,7 +29,7 @@ const orderData = ref({
     address: '',
     city: null,
   },
-  order_details: [],
+  order_details: orderDetails.value,
   delivery_type: null,
   note: '',
   total: '',

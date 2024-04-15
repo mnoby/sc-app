@@ -7,6 +7,10 @@ class ProductService {
     return db.orderBy(value)
   }
 
+  getWhere(column, condition, value) {
+    return db.where(column, condition, value)
+  }
+
   create(type) {
     return db.add(type)
   }

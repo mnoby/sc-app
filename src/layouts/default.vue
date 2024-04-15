@@ -3,7 +3,7 @@ import DefaultLayoutWithVerticalNav from './components/DefaultLayoutWithVertical
 </script>
 
 <template>
-  <DefaultLayoutWithVerticalNav>
+  <DefaultLayoutWithVerticalNav>  
     <RouterView />
   </DefaultLayoutWithVerticalNav>
 </template>

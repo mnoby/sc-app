@@ -22,6 +22,8 @@ const vuetifyTheme = useTheme()
     <!-- 👉 navbar -->
     <template #navbar="{ toggleVerticalOverlayNavActive }">
       <div class="d-flex h-100 align-center">
+        <UserProfile /> 
+
         <!-- 👉 Vertical nav toggle in overlay mode -->
         <IconBtn
           class="ms-n3 d-lg-none"
@@ -62,8 +64,6 @@ const vuetifyTheme = useTheme()
         </IconBtn>
 
         <NavbarThemeSwitcher class="me-2" />
-
-        <UserProfile /> 
       </div>
     </template>
 
