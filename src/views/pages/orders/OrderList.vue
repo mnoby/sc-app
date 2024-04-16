@@ -125,58 +125,70 @@ const getComponents=selectedPackage=>{
   
 }
 
+// eslint-disable-next-line sonarjs/cognitive-complexity
 const getPackTotal=()=>{
   console.log(`prod reg >>> ${JSON.stringify(productRegular.value.length)}`)
-  console.log(`prod pack >>> ${JSON.stringify(productPackage.value[0].components.length)}`)
+  console.log(`prod pack >>> ${JSON.stringify(productPackage.value.length)}`)
   let qty
   let total=0
   const packages = productPackage.value
   const regular = productRegular.value
 
-  regular.forEach((reg, idx, a)=> {
+  // loop for regular products length
+  for(let i=0; i < regular.length; i++){
     // qty=[]
-    if(packages[idx].components.length>0){
-      console.log(`comp length lebih dari 0 ${idx}`)
+    //loop for package products length
+    for(let j=0; j < packages.length; j++){
+      console.log(`hahahah >> ${JSON.stringify(packages[j])}`)
 
-      // qty.push(reg.qty)
-      packages[idx].components.forEach(pack=> {
-        console.log(`looping si compo ${pack} -- ${reg.product_name}`)
+      const comp = packages[j].components
+
+      // Loop for components length
+      for(let k=0; k < comp.length; k++){
+        console.log(`check si comp ${comp[k]}`)
+
+        // checking whether regular product equal to package product component
+        if(regular[i].product_name == comp[k]){
+          console.log(`product_name ${regular[i].product_name} dan comp nya sama ${comp[k]} `)
+
+          // sum the both quantity between [i] and package item
+          total = parseInt(regular[i].qty)+parseInt(packages[j].qty)
+
+          // Remove the checked components
+          comp.splice( comp.indexOf(comp[k]), 1)
+          console.log(`splice order ke ${packages[j]} selesai ${ comp}`)
+
+          // push regular product name and qty into an variable
+          orderSum.value.push({ name: regular[i].product_name, qty: total })
+
+          //checking whether it is the last index both regular product and package component
+          if(i == regular.length-1 &&  comp.length > 0) {
+            console.log(`index trakhir ni si regular ${i} dan si comp ${k}`)
+            comp.forEach(item => {
+              orderSum.value.push({ name: item, qty: packages[j].qty })
+              console.log(`Push sisa component ke OrderSumm ${JSON.stringify(orderSum.value)}`)
+            })
         
-        if(reg.product_name == pack){
-          console.log(`product_name nya sama ${reg.product_name}`)
-          if(idx == reg.length-1 ) {
-            console.log(`index trakhir ni ${idx}`)
-
-            // qty.push(packages.qty)
-            total = parseInt(reg.qty)+parseInt(packages[idx].qty)
-            packages[idx].components.splice( packages[idx].components.indexOf(pack), 1)
-            console.log(`splice selesai ${ packages[idx].components}`)
-            orderSum.value.push({ name: reg.product_name, qty: total })
-            orderSum.value.push({ name: packages[idx].product_name, qty: pack.qty })
-          }else{
-            console.log(`aku disini`)
-            total = parseInt(reg.qty)+parseInt(packages[idx].qty)
-            packages[idx].components.splice( packages[idx].components.indexOf(pack), 1)
-            console.log(`splice selesai ${ packages[idx].components}`)
-            orderSum.value.push({ name: reg.product_name, qty: total })
           }
-        }else {
-          orderSum.value.push({ name: reg.product_name, qty: reg.qty })
-        }
-        
-        // console.log(`check qty >>> ${qty}`)
-      })
-    } else{
-      console.log(`langsung sini ahh`)
-      orderSum.value.push({ name: reg.product_name, qty: reg.qty })
-    }
 
-    // for (let idx in qty){
-    //   total += qty[idx]
-    //   console.log(`total nya >>> ${total}`)
-    // }
+        }else {
+          orderSum.value.push({ name: regular[i].product_name, qty: regular[i].qty })
+
+          // if(i == regular.length-1 &&  comp.length > 0) {
+          //   console.log(`package name dan compe tidak sama TAPi index trakhir ni si regular ${i} dan si comp ${k}`)
+          //   comp.forEach(item => {
+          //     orderSum.value.push({ name: item, qty: packages[j].qty })
+          //     console.log(`Push sisa component ke OrderSumm ${JSON.stringify(orderSum.value)}`)
+          //   })
+        
+          // }
+        }
+      }
+
+      console.log(`total nya >>> ${total}`)
+    }
     
-  })
+  }
   console.log(`orderSUm >>>>> ${JSON.stringify(orderSum.value)}`)
 }
 
