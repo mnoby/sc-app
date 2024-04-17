@@ -1,5 +1,6 @@
 <!-- eslint-disable vue/attribute-hyphenation -->
 <script setup>
+import ActionMenu from '@/layouts/components/ActionMenu.vue'
 import OrderService from '@/services/OrderService'
 import ProductService from '@/services/ProductService'
 import { useStore } from 'vuex'
@@ -7,15 +8,12 @@ import { useStore } from 'vuex'
 const store = useStore()
 const deletedData = ref()
 const products=ref([])
-const productRegular=ref()
-const productPackage=ref()
 const orderSum=ref([])
 const orders=ref([])
 const dialog=ref(false)
 const dialog2=ref(false)
-const dialogPreview=ref(false)
 const search=ref()
-const open=ref(['Regular', 'Package'])
+
 
 const headers=ref([
   {  key: 'actions', title: '', sortable: false },
@@ -86,155 +84,6 @@ const deleteProduct=productId=>{
   ProductService.delete(productId)
   console.log(`Product ${productId} Deleted Successfully`)
   dialog2.value=true
-}
-
-const getProductByType=isPackage=> {
-  return new Promise((resolve, reject) => {
-    let name=[]
-    products.value.forEach(prod => {
-      if(prod.data.package == isPackage){
-        name.push(prod)
-      }
-    })
-  
-    resolve(name)
-  })
-}
-
-const getComponents=selectedPackage=>{
-  return new Promise((resolve, reject) => {
-    const abc = selectedPackage
-
-    console.log(`abc >>> ${JSON.stringify(abc)}`)
-    abc.forEach((item, idx, a)=> {
-      ProductService.getWhere('name', '==', item.product_name).get().then(res => {
-        res.forEach(doc => {
-          abc[idx].components = doc.data().components
-          productPackage.value = abc
-        })
-
-        // productPackage.value = abc
-        console.log(`YAYAYAYA >>> ${JSON.stringify(productPackage.value)}`)
-
-      })
-      
-    })
-    
-    resolve(productPackage.value)
-  })
-  
-}
-
-// eslint-disable-next-line sonarjs/cognitive-complexity
-const getPackTotal=()=>{
-  console.log(`prod reg >>> ${JSON.stringify(productRegular.value.length)}`)
-  console.log(`prod pack >>> ${JSON.stringify(productPackage.value.length)}`)
-  let qty
-  let total=0
-  const packages = productPackage.value
-  const regular = productRegular.value
-
-  // loop for regular products length
-  for(let i=0; i < regular.length; i++){
-    // qty=[]
-    //loop for package products length
-    for(let j=0; j < packages.length; j++){
-      console.log(`hahahah >> ${JSON.stringify(packages[j])}`)
-
-      const comp = packages[j].components
-
-      // Loop for components length
-      for(let k=0; k < comp.length; k++){
-        console.log(`check si comp ${comp[k]}`)
-
-        // checking whether regular product equal to package product component
-        if(regular[i].product_name == comp[k]){
-          console.log(`product_name ${regular[i].product_name} dan comp nya sama ${comp[k]} `)
-
-          // sum the both quantity between [i] and package item
-          total = parseInt(regular[i].qty)+parseInt(packages[j].qty)
-
-          // Remove the checked components
-          comp.splice( comp.indexOf(comp[k]), 1)
-          console.log(`splice order ke ${packages[j]} selesai ${ comp}`)
-
-          // push regular product name and qty into an variable
-          orderSum.value.push({ name: regular[i].product_name, qty: total })
-
-          //checking whether it is the last index both regular product and package component
-          if(i == regular.length-1 &&  comp.length > 0) {
-            console.log(`index trakhir ni si regular ${i} dan si comp ${k}`)
-            comp.forEach(item => {
-              orderSum.value.push({ name: item, qty: packages[j].qty })
-              console.log(`Push sisa component ke OrderSumm ${JSON.stringify(orderSum.value)}`)
-            })
-        
-          }
-
-        }else {
-          orderSum.value.push({ name: regular[i].product_name, qty: regular[i].qty })
-
-          // if(i == regular.length-1 &&  comp.length > 0) {
-          //   console.log(`package name dan compe tidak sama TAPi index trakhir ni si regular ${i} dan si comp ${k}`)
-          //   comp.forEach(item => {
-          //     orderSum.value.push({ name: item, qty: packages[j].qty })
-          //     console.log(`Push sisa component ke OrderSumm ${JSON.stringify(orderSum.value)}`)
-          //   })
-        
-          // }
-        }
-      }
-
-      console.log(`total nya >>> ${total}`)
-    }
-    
-  }
-  console.log(`orderSUm >>>>> ${JSON.stringify(orderSum.value)}`)
-}
-
-const getOrderDetails=items=>{
-
-  // Get Regular Item in Selected Row
-  let regular=[]
-  getProductByType(false).then(res => {
-    items.forEach(item => {
-      for(let idx in res){
-        if(item.product_name == res[idx].data.name){
-          regular.push(item)
-          
-          return
-        }
-      }
-    })
-  }).then(()=> {
-    productRegular.value = regular
-    console.log(`productRegular >>>>> ${JSON.stringify(productRegular.value)}`)
-  })
-
-  // Get Packae Item in Selected Row
-  let packages=[]
-  getProductByType(true).then(res => {
-    items.forEach(item => {
-      for(let idx in res){
-        if(item.product_name == res[idx].data.name){
-          packages.push(item)
-          
-          return
-        }
-      }
-    })
-  }).then(()=> {
-    getComponents(packages)
-
-    // productPackage.value=res
-
-    // console.log(`productPackage >>>>> ${JSON.stringify(productPackage.value)}`)
-
-     
- 
-
-
-  })
 }
 
 const reload = () =>{
@@ -323,7 +172,7 @@ const debuggerBtn2 = () => {
                 {{ item.data.order_details[0].product_name }}
               </td>
               <td :colspan="1">
-                {{ item.data.order_details[0].qty }} toples
+                {{ item.data.order_details[0].qty }} pack
               </td>
             </tr>
           </template>
@@ -390,65 +239,21 @@ const debuggerBtn2 = () => {
 
 
           <!-- <<<<<<<<<<<<<<< Dots Vertical Menus >>>>>>>>>>>>>>> -->
+          
           <template #item.actions="{ item }">
             <VButton
               type="submit"
               color="warning"
               variant="tonal"
               class="ma-0"
-            >
-              <VIcon
-                size="large"
-                icon="bx-dots-vertical-rounded"
-                color="warning"
+            >              
+              <ActionMenu
+                :data="item"
+                :products="products"
               />
-              <!-- SECTION Menu -->
-              <VMenu
-                activator="parent"
-                width="100px"
-                location="bottom"
-                offset-y="5px"
-                transition="slide-x-transition"
-              >
-                <VList class="border-sm">
-                  <!-- 👉 View -->
-                  <VListItem link>
-                    <VListItemTitle
-                      class="text-subtitle-2 text-primary"
-                      @click="dialogPreview=true; getOrderDetails(orders[7].data.order_details)"
-                    >
-                      View
-                    </VListItemTitle>
-                  </VListItem>
-
-                  <!-- 👉 Edit -->
-                  <VListItem link>
-                    <VListItemTitle class="text-subtitle-2 text-primary">
-                      Edit
-                    </VListItemTitle>
-                  </VListItem>
-
-                  <!-- 👉 Delete -->
-                  <VListItem link>
-                    <VListItemTitle class="text-subtitle-2 text-error">
-                      Delete
-                    </VListItemTitle>
-                  </VListItem>
-
-                  <!-- Divider -->
-                  <VDivider class="my-2" />
-
-                  <!-- 👉 Set Bill Status -->
-                  <VListItem link>
-                    <VListItemTitle class="text-subtitle-2 text-warning text-wrap">
-                      {{ item.data.paid ? 'Set Unpaid' : 'Set Paid' }}
-                    </VListItemTitle>
-                  </VListItem>
-                </VList>
-              </VMenu>
-              <!-- !SECTION -->
             </VButton>
           </template>
+    
           <!-- <<<<<<<<<<<<<<< Dots Vertical Menus END >>>>>>>>>>>>>>> -->
         </VDataTable>
       </VCard>
@@ -534,193 +339,6 @@ const debuggerBtn2 = () => {
         </VDialog>
 
         <!-- DIALOG PREVIEW -->
-        <VCard>
-          <VDialog
-            v-model="dialogPreview"
-            max-width="720px"
-          >
-            <VCard class="rounded-lg">
-              <template #text>
-                <!--
-                  close Button 
-                  <VCardActions class="py-0 px-0">
-                  <VSpacer />
-          
-                  <VBtn
-                  text="Close"
-                  variant="text"
-                  > 
-                  <VIcon
-                  icon="bx-x-circle"
-                  color="disabled"
-                  size="32"
-                  @click="dialogPreview=false"
-                  />
-                  </VBtn>
-                  </VCardActions>
-                -->
-                <!-- DEBUG BUTTOn -->
-                <VBtn
-                  type="debug"
-                  size="small"
-                  color="success"
-                  @click="debuggerBtn2"
-                >
-                  <VIcon icon="bx-add-to-queue" />
-                  <span class="ms-2">DEBUG</span>
-                </VBtn> 
-                <!-- DEBUG BUTTOn END -->
-                <VContainer
-                  fluid
-                  class="ma-0 pa-0"
-                >
-                  <VList
-                    v-model:opened="open"
-                    class="ma-0 pa-0"
-                  >
-                    <VRow>
-                      <VCol
-                        cols="12"
-                        md="6"
-                        sm="12"
-                        xs="12"
-                      >
-                        <!-- <<<<<<<<<<<<<<<<<<< REGULAR ITEM GROUP >>>>>>>>>>>>>>>>>>> -->
-                        <VListGroup value="Regular">
-                          <template #activator="{ props }">
-                            <VListItem
-                              v-bind="props"
-                              title="Regular Items"
-                              density="compact"
-                              class="text-primary "
-                            />
-                          </template>
-
-                          <VListItem
-                            v-for="(item) in productRegular"
-                            :key="item.order_no"
-                            :ripple="false"
-                            density="compact"
-                            class="text-subtitle-2 py-0"
-                          >
-                            <VRow>
-                              <VCol cols="9">
-                                {{ item.product_name }}
-                              </VCol>
-                              <VCol cols="3">
-                                {{ item.qty }} pack
-                              </VCol>
-                            </VRow>
-                          </VListItem>
-                        </VListGroup>
-                      </VCol>
-
-                      <VCol
-                        cols="12"
-                        md="6"
-                        sm="12"
-                        xs="12"
-                      >
-                        <!-- <<<<<<<<<<<<<<<<<<< PACKAGE ITEM GROUP >>>>>>>>>>>>>>>>>>> -->
-                        <VListGroup value="Package">
-                          <template #activator="{ props }">
-                            <VListItem
-                              v-bind="props"
-                              title="Package Items"
-                              density="compact"
-                              class="ma-0 pa-0 text-primary"
-                            />
-                          </template>
-
-                          <VListGroup
-                            v-for="(item) in productPackage"
-                            :key="item.order_no"
-                            :ripple="false"
-                            :value="item.product_name"
-                            density="compact"
-                          >
-                            <template #activator="{ props }">
-                              <VListItem
-                                v-bind="props"
-                                density="compact"
-                                class="ma-0 pa-0 text-subtitle-2"
-                              >
-                                <VRow>
-                                  <VCol cols="8">
-                                    {{ item.product_name }} 
-                                  </VCol>
-                                  <VCol cols="4">
-                                    {{ item.qty }} pack
-                                  </VCol>
-                                </VRow>
-                              </VListItem>
-                            </template>
-                            <VListItem
-                              v-for="(comp) in item.components"
-                              :key="comp"
-                              :ripple="false"
-                              density="compact"
-                              class="text-caption py-0"
-                            >
-                              {{ comp }}
-                            </VListItem>
-                          </VListGroup>
-                        </VListGroup>
-                      </VCol>
-
-                      <VCol
-                        cols="12"
-                        md="12"
-                        sm="12"
-                        xs="12"
-                      >
-                        <!-- <<<<<<<<<<<<<<<<<<< TOTAL GROUP >>>>>>>>>>>>>>>>>>> -->
-                        <VListGroup value="Summary">
-                          <template #activator="{ props }">
-                            <VListItem
-                              v-bind="props"
-                              title="Summary"
-                              density="compact"
-                              class="text-primary "
-                            />
-                          </template>
-
-                          <VListItem
-                            v-for="(item) in productRegular"
-                            :key="item.order_no"
-                            :ripple="false"
-                            density="compact"
-                            class="text-subtitle-2 py-0"
-                          >
-                            <VRow>
-                              <VCol cols="9">
-                                {{ item.product_name }}
-                              </VCol>
-                              <VCol cols="3">
-                                {{ item.qty }} pack
-                              </VCol>
-                            </VRow>
-                          </VListItem>
-                        </VListGroup>
-                      </VCol>
-                    </VRow>
-                  </VList>
-                </VContainer>
-
-                <VCardActions>
-                  <VSpacer />
-                  <VBtn
-                    color="blue-darken-1"
-                    variant="text"
-                    @click="close"
-                  >
-                    Close
-                  </VBtn>
-                </VCardActions>
-              </template>
-            </VCard>
-          </VDialog>
-        </VCard>
         <!-- DIALOG PREVIEW END -->
       </div>
       <!--  <<<<<<<<<<<<<<<<<<< MODAL END >>>>>>>>>>>>>>>>>>>  -->
