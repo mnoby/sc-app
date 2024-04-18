@@ -6,6 +6,9 @@ import OrderService from '@/services/OrderService'
 import ProductService from '@/services/ProductService'
 import { VCardText } from 'vuetify/lib/components/index.mjs'
 
+const prop = defineProps(['edit'])
+
+const isEdit=ref(false)
 const YYYYMMDD = new Date().toISOString()
 const splitDate= YYYYMMDD.substring(0, 10).split('-')
 
@@ -38,12 +41,6 @@ const orderData = ref({
   paid: false,
 })
 
-watch( () => orderDetails.value,
-  count => {
-    console.log(`count is: ${count}`)
-  })
-
-
 const deliveryTypes = ref()
 const products=ref()
 const deleted=ref([])
@@ -53,8 +50,21 @@ const orderCount=ref()
 const dialog=ref(false)
 const myForm = ref()
 
+
+watch( () => prop.edit, () => {
+  isEdit.value = prop.edit
+
+  
+})
+
 // Fetch Datas from DB on Mounted
 onMounted(async () => {
+  console.log(`onmounted prop edit in orderForm >> ${prop.edit}`)
+  if(prop.edit){
+    orderDetails.value='input the value here'
+    orderData.value = 'input the value here'
+  }
+
   //Get Cities Data
   await CityService.getAll().get().then(res => {
     cities.value = res.docs.map(doc => ({ id: doc.id, cityName: doc.data().name }))

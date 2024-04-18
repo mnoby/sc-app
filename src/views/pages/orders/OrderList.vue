@@ -5,21 +5,16 @@ import OrderService from '@/services/OrderService'
 import ProductService from '@/services/ProductService'
 import { useStore } from 'vuex'
 
+// const prop = defineProps(['isMainPage'])
+const emit = defineEmits(['mainPageClose', 'isEdit'])
 const store = useStore()
 const deletedData = ref()
+const search=ref()
 const products=ref([])
-const orderSum=ref([])
 const orders=ref([])
 const dialog=ref(false)
 const dialog2=ref(false)
-const search=ref()
-
-
-const parseOrder=ref({
-  regular: '',
-  package: '',
-  summary: '',
-})
+const editClicked=ref(false)
 
 const headers=ref([
   {  key: 'actions', title: '', sortable: false },
@@ -27,8 +22,7 @@ const headers=ref([
     align: 'start',
     key: 'data.order_no',
     sortable: false,
-    title: 'Order Number',
-    
+    title: 'Order Number',  
   },
   { key: 'data.customer_details.name', title: 'Name' },
   { key: 'data.delivery_type', title: 'Delivery' },
@@ -37,7 +31,16 @@ const headers=ref([
   { key: 'data.paid', title: 'Payment Status' },
 ])
 
+watch( () => editClicked.value, () => {
+  console.log(`prop main page >>> ${editClicked.value}`)
+  emit('mainPageClose')
+  emit('isEdit')
+
+  // prop.isMainPage=false
+})
 onMounted(async () => {
+  console.log(`on mounted orderList editClicked >>> ${editClicked.value}`)
+
   try{
     getProducts()
     getOrders()
@@ -56,23 +59,23 @@ const getProducts = () => {
 const getOrders = () => {
   OrderService.getAll('order_no', 'asc').where('active', '==', true).get().then(res => {
     orders.value = res.docs.map(doc => ({ id: doc.id, data: doc.data() }))
-    console.log(`orders >>>> ${JSON.stringify(orders.value.length)}`)
   })
 }
 
-const updateProduct=product=>{
-  // console.log (`Id >>>>>>>>>>>> ${product.id}`)
-  let data = {
-    id: product.id,
-    details: {
-      name: product.name,
-      price: product.price,
-      package: product.package,
-      components: product.components,
-    },
-  }
-  store.commit('setMainPage', false)
-  store.commit('setUpdateValues', data)
+const updateOrder=order=>{
+  editClicked.value=true
+
+  // console.log (`Id >>>>>>>>>>>> ${JSON.stringify(order)}`)
+
+  // let data = {
+  //   id: product.id,
+  //   details: {
+  //     name: product.name,
+  //     price: product.price,
+  //     package: product.package,
+  //     components: product.components,
+  //   },
+  // }
 
   // console.log('udpateValues From List productList:', JSON.stringify(store.state.updateValues))
   // console.log(`YAAAA ${JSON.stringify(data)}`)
@@ -92,84 +95,8 @@ const deleteProduct=productId=>{
   dialog2.value=true
 }
 
-const getProductByType=isPackage=> {
-  // console.log(`KKKK >>> ${JSON.stringify(products.value)}`)
-  
-  return new Promise((resolve, reject) => {
-    let name = products.value.filter(prod=> {
-      return prod.data.package == isPackage
-    })
-    resolve(name)
-  })
-}
-
-
-const getOrderSummary=(regularOrder, packageOrder)=>{
-  let rawJoin=[]
-  const packages = packageOrder
-  const regular = regularOrder
-
-  //Loop for package product
-  for(let i=0; i < packages.length; i++){
-    const component = packages[i].components
-
-    // Loop for each package component
-    for(let j=0; j < component.length; j++){
-      rawJoin.push({ product_name: component[j], qty: parseInt(packages[i].qty) })
-    }
-  }
-
-  // Merging the duplicated variable in rawJoin and summ the qty
-  regular.forEach((data=> {
-    rawJoin.push({ product_name: data.product_name, qty: parseInt(data.qty) })
-  }))
-
-  const mergeAndCount = rawJoin.reduce((a, c) => {
-    const obj = a.find(obj => obj.product_name === c.product_name)
-    if (!obj) {
-      a.push(c)
-    } else {
-      obj.qty += c.qty
-    }
-    
-    return a
-  }, [])
-
-  sortArrObj(mergeAndCount, 'product_name', false)
-  
-  return parseOrder.value['summary'] = mergeAndCount
-
-}
-
-const parseOrderDetails=items=>{
-  const itemState=[false, true]
- 
-  return itemState.forEach(state=> {
-
-    // get product Type inside the Order details and store the values into separate variable
-    getProductByType(state).then(res => {
-      const temp =[]
-
-      res.forEach(data =>{
-        const obj = items.find(obj => obj.product_name === data.data.name)
-
-        if(obj){
-          // add component object into order details
-          obj.components = data.data.components
-          temp.push(obj)
-        }
-        
-        return temp
-      })
-      if(state){
-        parseOrder.value['package'] = temp
-      }else{
-        parseOrder.value['regular'] = temp
-      }
-    }).then(() => {
-      getOrderSummary(parseOrder.value['regular'], parseOrder.value['package'])
-    })
-  })
+const closeMainPage=()=> {
+  prop.isMainPage=false
 }
 
 const reload = () =>{
@@ -182,22 +109,6 @@ const reload = () =>{
 const formatNumber = number => {
   return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
 }
-
-// eslint-disable-next-line sonarjs/cognitive-complexity
-const sortArrObj = (arrObj, sortBy, asc=true) => {
-  if(asc){
-    return  arrObj.sort(
-      (prop1, prop2) => 
-        (prop1[sortBy] > prop2[sortBy]) ? 1 : (prop1[sortBy] < prop2[sortBy]) ? -1 : 0)
-  } 
-  else{
-    arrObj.sort(
-      (prop1, prop2) => 
-        (prop1[sortBy] < prop2[sortBy]) ? 1 : (prop1[sortBy] > prop2[sortBy]) ? -1 : 0)
-
-  }
-}
-
 
 // for debugginf purpose
 const debuggerBtn = () => {
@@ -275,7 +186,7 @@ const debuggerBtn2 = () => {
                 {{ item.data.order_details[0].product_name }}
               </td>
               <td :colspan="1">
-                {{ item.data.order_details[0].qty }} pack
+                {{ item.data.order_details[0].qty }} toples
               </td>
             </tr>
           </template>
@@ -342,66 +253,20 @@ const debuggerBtn2 = () => {
 
 
           <!-- <<<<<<<<<<<<<<< Dots Vertical Menus >>>>>>>>>>>>>>> -->
-          
           <template #item.actions="{ item }">
             <VButton
               type="submit"
               color="warning"
               variant="tonal"
               class="ma-0"
-            >              
+            >
               <ActionMenu
                 :data="item"
                 :products="products"
+                @main-page-close="updateOrder(item.data)"
               />
-              <!-- SECTION Menu -->
-              <VMenu
-                activator="parent"
-                width="100px"
-                location="bottom"
-                offset-y="5px"
-                transition="slide-x-transition"
-              >
-                <VList class="border-sm">
-                  <!-- 👉 View -->
-                  <VListItem link>
-                    <VListItemTitle
-                      class="text-subtitle-2 text-primary"
-                      @click="dialogPreview=true; parseOrderDetails(item.data.order_details)"
-                    >
-                      View
-                    </VListItemTitle>
-                  </VListItem>
-
-                  <!-- 👉 Edit -->
-                  <VListItem link>
-                    <VListItemTitle class="text-subtitle-2 text-primary">
-                      Edit
-                    </VListItemTitle>
-                  </VListItem>
-
-                  <!-- 👉 Delete -->
-                  <VListItem link>
-                    <VListItemTitle class="text-subtitle-2 text-error">
-                      Delete
-                    </VListItemTitle>
-                  </VListItem>
-
-                  <!-- Divider -->
-                  <VDivider class="my-2" />
-
-                  <!-- 👉 Set Bill Status -->
-                  <VListItem link>
-                    <VListItemTitle class="text-subtitle-2 text-warning text-wrap">
-                      {{ item.data.paid ? 'Set Unpaid' : 'Set Paid' }}
-                    </VListItemTitle>
-                  </VListItem>
-                </VList>
-              </VMenu>
-              <!-- !SECTION -->
             </VButton>
           </template>
-    
           <!-- <<<<<<<<<<<<<<< Dots Vertical Menus END >>>>>>>>>>>>>>> -->
         </VDataTable>
       </VCard>
@@ -485,198 +350,10 @@ const debuggerBtn2 = () => {
             </template>
           </VCard>
         </VDialog>
-
-        <!-- DIALOG PREVIEW -->
-        <VCard>
-          <VDialog
-            v-model="dialogPreview"
-            max-width="720px"
-          >
-            <VCard class="rounded-lg">
-              <template #text>
-                <!--
-                  close Button 
-                  <VCardActions class="py-0 px-0">
-                  <VSpacer />
-          
-                  <VBtn
-                  text="Close"
-                  variant="text"
-                  > 
-                  <VIcon
-                  icon="bx-x-circle"
-                  color="disabled"
-                  size="32"
-                  @click="dialogPreview=false"
-                  />
-                  </VBtn>
-                  </VCardActions>
-                -->
-                <!-- DEBUG BUTTOn -->
-                <VBtn
-                  type="debug"
-                  size="small"
-                  color="success"
-                  @click="debuggerBtn2"
-                >
-                  <VIcon icon="bx-add-to-queue" />
-                  <span class="ms-2">DEBUG</span>
-                </VBtn> 
-                <!-- DEBUG BUTTOn END -->
-                <VContainer
-                  fluid
-                  class="ma-0 pa-0"
-                >
-                  <VList
-                    v-model:opened="open"
-                    class="ma-0 pa-0"
-                  >
-                    <VRow>
-                      <VCol
-                        cols="12"
-                        md="6"
-                        sm="12"
-                        xs="12"
-                      >
-                        <!-- <<<<<<<<<<<<<<<<<<< REGULAR ITEM GROUP >>>>>>>>>>>>>>>>>>> -->
-                        <VListGroup value="Regular">
-                          <template #activator="{ props }">
-                            <VListItem
-                              v-bind="props"
-                              title="Regular Items"
-                              density="compact"
-                              class="text-primary "
-                            />
-                          </template>
-
-                          <VListItem
-                            v-for="(item) in parseOrder.regular"
-                            :key="item.product_name"
-                            :ripple="false"
-                            density="compact"
-                            class="text-subtitle-2 py-0"
-                          >
-                            <VRow>
-                              <VCol cols="9">
-                                {{ item.product_name }}
-                              </VCol>
-                              <VCol cols="3">
-                                {{ item.qty }} pack
-                              </VCol>
-                            </VRow>
-                          </VListItem>
-                        </VListGroup>
-                      </VCol>
-
-                      <VCol
-                        cols="12"
-                        md="6"
-                        sm="12"
-                        xs="12"
-                      >
-                        <!-- <<<<<<<<<<<<<<<<<<< PACKAGE ITEM GROUP >>>>>>>>>>>>>>>>>>> -->
-                        <VListGroup value="Package">
-                          <template #activator="{ props }">
-                            <VListItem
-                              v-bind="props"
-                              title="Package Items"
-                              density="compact"
-                              class="ma-0 pa-0 text-primary"
-                            />
-                          </template>
-
-                          <VListGroup
-                            v-for="(item) in parseOrder.package"
-                            :key="item.order_no"
-                            :ripple="false"
-                            :value="item.product_name"
-                            density="compact"
-                          >
-                            <template #activator="{ props }">
-                              <VListItem
-                                v-bind="props"
-                                density="compact"
-                                class="ma-0 pa-0 text-subtitle-2"
-                              >
-                                <VRow>
-                                  <VCol cols="8">
-                                    {{ item.product_name }} 
-                                  </VCol>
-                                  <VCol cols="4">
-                                    {{ item.qty }} pack
-                                  </VCol>
-                                </VRow>
-                              </VListItem>
-                            </template>
-                            <VListItem
-                              v-for="(comp) in item.components"
-                              :key="comp"
-                              :ripple="false"
-                              density="compact"
-                              class="text-caption py-0"
-                            >
-                              {{ comp }}
-                            </VListItem>
-                          </VListGroup>
-                        </VListGroup>
-                      </VCol>
-
-                      <VCol
-                        cols="12"
-                        md="12"
-                        sm="12"
-                        xs="12"
-                      >
-                        <!-- <<<<<<<<<<<<<<<<<<< TOTAL GROUP >>>>>>>>>>>>>>>>>>> -->
-                        <VListGroup value="Summary">
-                          <template #activator="{ props }">
-                            <VListItem
-                              v-bind="props"
-                              title="Summary"
-                              density="compact"
-                              class="text-primary "
-                            />
-                          </template>
-
-                          <VListItem
-                            v-for="(i) in parseOrder.summary"
-                            :key="i.product_name"
-                            :ripple="false"
-                            density="compact"
-                            class="text-subtitle-2 py-0"
-                          >
-                            <VRow>
-                              <VCol cols="9">
-                                {{ i.product_name }}
-                              </VCol>
-                              <VCol cols="3">
-                                {{ i.qty }} pack
-                              </VCol>
-                            </VRow>
-                          </VListItem>
-                        </VListGroup>
-                      </VCol>
-                    </VRow>
-                  </VList>
-                </VContainer>
-
-                <VCardActions>
-                  <VSpacer />
-                  <VBtn
-                    color="blue-darken-1"
-                    variant="text"
-                    @click="close"
-                  >
-                    Close
-                  </VBtn>
-                </VCardActions>
-              </template>
-            </VCard>
-          </VDialog>
-        </VCard>
-        <!-- DIALOG PREVIEW END -->
       </div>
       <!--  <<<<<<<<<<<<<<<<<<< MODAL END >>>>>>>>>>>>>>>>>>>  -->
     </VCol>
   </VRow>
 </template>
+
+

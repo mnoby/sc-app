@@ -1,93 +1,108 @@
 <script setup>
-import ProductService from '@/services/ProductService'
 import DialogPreview from './DialogPreview.vue'
 
-
-const props = defineProps(['data', 'products'])
-
+const props = defineProps(['data', 'products', 'isMainPage'])
+const emit = defineEmits(["mainPageClose"])
 const isOpen=ref(false)
-const productRegular=ref()
-const productPackage=ref()
 
-const getProductByType=isPackage=> {
+const parseOrder=ref({
+  regular: '',
+  package: '',
+  summary: '',
+})
+
+const getProductByType=isPackage=> {  
   return new Promise((resolve, reject) => {
-    let name=[]
-    props.products.forEach(prod => {
-      if(prod.data.package == isPackage){
-        name.push(prod)
-      }
+    let name = props.products.filter(prod=> {
+      return prod.data.package == isPackage
     })
-  
     resolve(name)
   })
 }
 
-const getComponents=selectedPackage=>{
-  return new Promise((resolve, reject) => {
-    const abc = selectedPackage
+// Function for Merge and Count both product_name and qty of order_details
+const getOrderSummary=(regularOrder, packageOrder)=>{
+  let rawJoin=[]
+  const packages = packageOrder
+  const regular = regularOrder
 
-    console.log(`abc >>> ${JSON.stringify(abc)}`)
-    abc.forEach((item, idx, a)=> {
-      ProductService.getWhere('name', '==', item.product_name).get().then(res => {
-        res.forEach(doc => {
-          abc[idx].components = doc.data().components
-          productPackage.value = abc
-        })
+  //Loop for package product
+  for(let i=0; i < packages.length; i++){
+    const component = packages[i].components
 
-        // productPackage.value = abc
-        console.log(`YAYAYAYA >>> ${JSON.stringify(productPackage.value)}`)
+    // Loop for each package component
+    for(let j=0; j < component.length; j++){
+      rawJoin.push({ product_name: component[j], qty: parseInt(packages[i].qty) })
+    }
+  }
 
-      })
-      
-    })
+  // Merging the duplicated variable in rawJoin and summ the qty
+  regular.forEach((data=> {
+    rawJoin.push({ product_name: data.product_name, qty: parseInt(data.qty) })
+  }))
+
+  const mergeAndCount = rawJoin.reduce((a, c) => {
+    const obj = a.find(obj => obj.product_name === c.product_name)
+    if (!obj) {
+      a.push(c)
+    } else {
+      obj.qty += c.qty
+    }
     
-    resolve(productPackage.value)
-  }) 
+    return a
+  }, [])
+
+  sortArrObj(mergeAndCount, 'product_name')
+  
+  return parseOrder.value['summary'] = mergeAndCount
+
 }
 
-const getOrderDetails=items=>{
-
-  // Get Regular Item in Selected Row
-  let regular=[]
-  getProductByType(false).then(res => {
-    items.forEach(item => {
-      for(let idx in res){
-        if(item.product_name == res[idx].data.name){
-          regular.push(item)
-          
-          return
-        }
-      }
-    })
-  }).then(()=> {
-    productRegular.value = regular
-    console.log(`productRegular >>>>> ${JSON.stringify(productRegular.value)}`)
-  })
-
-  // Get Packae Item in Selected Row
-  let packages=[]
-  getProductByType(true).then(res => {
-    items.forEach(item => {
-      for(let idx in res){
-        if(item.product_name == res[idx].data.name){
-          packages.push(item)
-          
-          return
-        }
-      }
-    })
-  }).then(()=> {
-    getComponents(packages)
-
-    // productPackage.value=res
-
-    // console.log(`productPackage >>>>> ${JSON.stringify(productPackage.value)}`)
-
-     
+// Function for defining the order detail by its type and attaching components property into it
+const parseOrderDetails=items=>{
+  const itemState=[false, true]
  
+  return itemState.forEach(state=> {
 
+    // get product Type inside the Order details and store the values into separate variable
+    getProductByType(state).then(res => {
+      const temp =[]
 
+      res.forEach(data =>{
+        const obj = items.find(obj => obj.product_name === data.data.name)
+
+        if(obj){
+          // add component object into order details
+          obj.components = data.data.components
+          temp.push(obj)
+        }
+        
+        return temp
+      })
+      if(state){
+        parseOrder.value['package'] = temp
+      }else{
+        parseOrder.value['regular'] = temp
+      }
+    }).then(() => {
+      getOrderSummary(parseOrder.value['regular'], parseOrder.value['package'])
+    })
   })
+}
+
+// eslint-disable-next-line sonarjs/cognitive-complexity
+const sortArrObj = (arrObj, sortBy, asc=true) => {
+  if(asc){
+    return  arrObj.sort(
+      (prop1, prop2) => 
+        (prop1[sortBy] > prop2[sortBy]) ? 1 : (prop1[sortBy] < prop2[sortBy]) ? -1 : 0)
+  } 
+  else{
+    arrObj.sort(
+      (prop1, prop2) => 
+        (prop1[sortBy] < prop2[sortBy]) ? 1 : (prop1[sortBy] > prop2[sortBy]) ? -1 : 0)
+
+  }
 }
 </script>
 
@@ -116,7 +131,7 @@ const getOrderDetails=items=>{
         <VListItem link>
           <VListItemTitle
             class="text-subtitle-2 text-primary"
-            @click="isOpen=true; getOrderDetails(props.data.data.order_details)"
+            @click="isOpen=true; parseOrderDetails(props.data.data.order_details)"
           >
             View
           </VListItemTitle>
@@ -124,7 +139,10 @@ const getOrderDetails=items=>{
 
         <!-- 👉 Edit -->
         <VListItem link>
-          <VListItemTitle class="text-subtitle-2 text-primary">
+          <VListItemTitle
+            class="text-subtitle-2 text-primary"
+            @click="emit('mainPageClose')"
+          >
             Edit
           </VListItemTitle>
         </VListItem>
@@ -149,11 +167,20 @@ const getOrderDetails=items=>{
     </VMenu>
     <!-- !SECTION -->
   </VButton>
-  {{ isOpen }}
+
+  <!-- OrderForm Component -->
+  <!--
+    <OrderForm
+    v-model=""
+    :edit-flow="isEdit"
+    :order-data="props.data.data"
+    />
+  -->
+          
+  <!-- Dialog Preview Component -->
   <DialogPreview
     :dialog-preview="isOpen"
-    :package="productPackage"
-    :regular="productRegular"
+    :parse-order="parseOrder"
     @modal-close="isOpen=false"
   />
 </template>
