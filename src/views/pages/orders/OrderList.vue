@@ -16,6 +16,12 @@ const dialog=ref(false)
 const dialog2=ref(false)
 const editClicked=ref(false)
 
+const parseOrder=ref({
+  regular: '',
+  package: '',
+  summary: '',
+})
+
 const headers=ref([
   {  key: 'actions', title: '', sortable: false },
   {
@@ -109,6 +115,22 @@ const reload = () =>{
 const formatNumber = number => {
   return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
 }
+
+// eslint-disable-next-line sonarjs/cognitive-complexity
+const sortArrObj = (arrObj, sortBy, asc=true) => {
+  if(asc){
+    return  arrObj.sort(
+      (prop1, prop2) => 
+        (prop1[sortBy] > prop2[sortBy]) ? 1 : (prop1[sortBy] < prop2[sortBy]) ? -1 : 0)
+  } 
+  else{
+    arrObj.sort(
+      (prop1, prop2) => 
+        (prop1[sortBy] < prop2[sortBy]) ? 1 : (prop1[sortBy] > prop2[sortBy]) ? -1 : 0)
+
+  }
+}
+
 
 // for debugginf purpose
 const debuggerBtn = () => {
