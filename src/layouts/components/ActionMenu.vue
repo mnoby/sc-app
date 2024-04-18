@@ -11,7 +11,6 @@ const productPackage=ref()
 
 const getProductByType=isPackage=> {
   return new Promise((resolve, reject) => {
-    console.log(`AHAHHAHA ${JSON.stringify(props.products)}`)
     let name=[]
     props.products.forEach(prod => {
       if(prod.data.package == isPackage){
@@ -99,7 +98,7 @@ const getOrderDetails=items=>{
     variant="tonal"
     class="ma-0"
   >
-    {{ props.data }}
+    <!-- {{ props.data }} -->
     <VIcon
       size="large"
       icon="bx-dots-vertical-rounded"
