@@ -5,7 +5,7 @@ import avatar1 from '@images/avatars/avatar-1.png'
 <template>
   <VBadge
     dot
-    location="bottom right"
+    location=" right"
     offset-x="3"
     offset-y="3"
     color="success"
@@ -22,7 +22,7 @@ import avatar1 from '@images/avatars/avatar-1.png'
       <VMenu
         activator="parent"
         width="230"
-        location="bottom end"
+        location="end"
         offset="14px"
       >
         <VList>

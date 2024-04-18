@@ -1,4 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import orders from '../pages/orders.vue'
+import products from '../pages/products.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -6,7 +8,7 @@ const router = createRouter({
     { path: '/', redirect: '/dashboard' },
     {
       path: '/',
-      component: () => import('../layouts/default.vue'),
+      component: import('../layouts/default.vue'),
       children: [
         {
           path: 'dashboard',
@@ -38,11 +40,11 @@ const router = createRouter({
         },
         {
           path: 'orders',
-          component: () => import('../pages/orders.vue'),
+          component: orders,
         },
         {
           path: 'products',
-          component: () => import('../pages/products.vue'),
+          component: products,
         },
       ],
     },

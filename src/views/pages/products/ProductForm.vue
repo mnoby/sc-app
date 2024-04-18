@@ -82,12 +82,11 @@ const checkDigit = () => {
 </script>
 
 <template>
-  <!--
-    <VBtn
+  <VBtn
     text="check"
     @click="checks"
-    />
-  -->
+  />
+  
 
   <VForm @submit.prevent="saveProduct">
     <VRow>

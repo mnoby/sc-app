@@ -4,6 +4,8 @@ import VerticalNavLayout from '@layouts/components/VerticalNavLayout.vue'
 import VerticalNavLink from '@layouts/components/VerticalNavLink.vue'
 import { useTheme } from 'vuetify'
 
+import UserProfile from './UserProfile.vue'
+
 // Components
 import Footer from '@/layouts/components/Footer.vue'
 import NavbarThemeSwitcher from '@/layouts/components/NavbarThemeSwitcher.vue'
@@ -20,6 +22,8 @@ const vuetifyTheme = useTheme()
     <!-- 👉 navbar -->
     <template #navbar="{ toggleVerticalOverlayNavActive }">
       <div class="d-flex h-100 align-center">
+        <UserProfile /> 
+
         <!-- 👉 Vertical nav toggle in overlay mode -->
         <IconBtn
           class="ms-n3 d-lg-none"
@@ -60,8 +64,6 @@ const vuetifyTheme = useTheme()
         </IconBtn>
 
         <NavbarThemeSwitcher class="me-2" />
-
-        <!-- <UserProfile /> -->
       </div>
     </template>
 
