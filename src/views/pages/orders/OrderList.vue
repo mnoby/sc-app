@@ -7,8 +7,9 @@ import { useStore } from 'vuex'
 const store = useStore()
 const deletedData = ref()
 const products=ref([])
-const productRegular=ref()
-const productPackage=ref()
+
+// const productRegular=ref()
+// const productPackage=ref()
 const orderSum=ref([])
 const orders=ref([])
 const dialog=ref(false)
@@ -16,6 +17,12 @@ const dialog2=ref(false)
 const dialogPreview=ref(false)
 const search=ref()
 const open=ref(['Regular', 'Package'])
+
+const parseOrder=ref({
+  regular: '',
+  package: '',
+  summary: '',
+})
 
 const headers=ref([
   {  key: 'actions', title: '', sortable: false },
@@ -89,151 +96,82 @@ const deleteProduct=productId=>{
 }
 
 const getProductByType=isPackage=> {
-  return new Promise((resolve, reject) => {
-    let name=[]
-    products.value.forEach(prod => {
-      if(prod.data.package == isPackage){
-        name.push(prod)
-      }
-    })
+  // console.log(`KKKK >>> ${JSON.stringify(products.value)}`)
   
+  return new Promise((resolve, reject) => {
+    let name = products.value.filter(prod=> {
+      return prod.data.package == isPackage
+    })
     resolve(name)
   })
 }
 
-const getComponents=selectedPackage=>{
-  return new Promise((resolve, reject) => {
-    const abc = selectedPackage
 
-    console.log(`abc >>> ${JSON.stringify(abc)}`)
-    abc.forEach((item, idx, a)=> {
-      ProductService.getWhere('name', '==', item.product_name).get().then(res => {
-        res.forEach(doc => {
-          abc[idx].components = doc.data().components
-          productPackage.value = abc
-        })
+const getOrderSummary=(regularOrder, packageOrder)=>{
+  let rawJoin=[]
+  const packages = packageOrder
+  const regular = regularOrder
 
-        // productPackage.value = abc
-        console.log(`YAYAYAYA >>> ${JSON.stringify(productPackage.value)}`)
+  //Loop for package product
+  for(let i=0; i < packages.length; i++){
+    const component = packages[i].components
 
-      })
-      
-    })
-    
-    resolve(productPackage.value)
-  })
-  
-}
+    // Loop for each package component
+    for(let j=0; j < component.length; j++){
+      rawJoin.push({ product_name: component[j], qty: parseInt(packages[i].qty) })
+    }
+  }
 
-// eslint-disable-next-line sonarjs/cognitive-complexity
-const getPackTotal=()=>{
-  console.log(`prod reg >>> ${JSON.stringify(productRegular.value.length)}`)
-  console.log(`prod pack >>> ${JSON.stringify(productPackage.value.length)}`)
-  let qty
-  let total=0
-  const packages = productPackage.value
-  const regular = productRegular.value
+  // Merging the duplicated variable in rawJoin and summ the qty
+  regular.forEach((data=> {
+    rawJoin.push({ product_name: data.product_name, qty: parseInt(data.qty) })
+  }))
 
-  // loop for regular products length
-  for(let i=0; i < regular.length; i++){
-    // qty=[]
-    //loop for package products length
-    for(let j=0; j < packages.length; j++){
-      console.log(`hahahah >> ${JSON.stringify(packages[j])}`)
-
-      const comp = packages[j].components
-
-      // Loop for components length
-      for(let k=0; k < comp.length; k++){
-        console.log(`check si comp ${comp[k]}`)
-
-        // checking whether regular product equal to package product component
-        if(regular[i].product_name == comp[k]){
-          console.log(`product_name ${regular[i].product_name} dan comp nya sama ${comp[k]} `)
-
-          // sum the both quantity between [i] and package item
-          total = parseInt(regular[i].qty)+parseInt(packages[j].qty)
-
-          // Remove the checked components
-          comp.splice( comp.indexOf(comp[k]), 1)
-          console.log(`splice order ke ${packages[j]} selesai ${ comp}`)
-
-          // push regular product name and qty into an variable
-          orderSum.value.push({ name: regular[i].product_name, qty: total })
-
-          //checking whether it is the last index both regular product and package component
-          if(i == regular.length-1 &&  comp.length > 0) {
-            console.log(`index trakhir ni si regular ${i} dan si comp ${k}`)
-            comp.forEach(item => {
-              orderSum.value.push({ name: item, qty: packages[j].qty })
-              console.log(`Push sisa component ke OrderSumm ${JSON.stringify(orderSum.value)}`)
-            })
-        
-          }
-
-        }else {
-          orderSum.value.push({ name: regular[i].product_name, qty: regular[i].qty })
-
-          // if(i == regular.length-1 &&  comp.length > 0) {
-          //   console.log(`package name dan compe tidak sama TAPi index trakhir ni si regular ${i} dan si comp ${k}`)
-          //   comp.forEach(item => {
-          //     orderSum.value.push({ name: item, qty: packages[j].qty })
-          //     console.log(`Push sisa component ke OrderSumm ${JSON.stringify(orderSum.value)}`)
-          //   })
-        
-          // }
-        }
-      }
-
-      console.log(`total nya >>> ${total}`)
+  const mergeAndCount = rawJoin.reduce((a, c) => {
+    const obj = a.find(obj => obj.product_name === c.product_name)
+    if (!obj) {
+      a.push(c)
+    } else {
+      obj.qty += c.qty
     }
     
-  }
-  console.log(`orderSUm >>>>> ${JSON.stringify(orderSum.value)}`)
+    return a
+  }, [])
+
+  sortArrObj(mergeAndCount, 'product_name', false)
+  
+  return parseOrder.value['summary'] = mergeAndCount
+
 }
 
-const getOrderDetails=items=>{
-
-  // Get Regular Item in Selected Row
-  let regular=[]
-  getProductByType(false).then(res => {
-    items.forEach(item => {
-      for(let idx in res){
-        if(item.product_name == res[idx].data.name){
-          regular.push(item)
-          
-          return
-        }
-      }
-    })
-  }).then(()=> {
-    productRegular.value = regular
-    console.log(`productRegular >>>>> ${JSON.stringify(productRegular.value)}`)
-  })
-
-  // Get Packae Item in Selected Row
-  let packages=[]
-  getProductByType(true).then(res => {
-    items.forEach(item => {
-      for(let idx in res){
-        if(item.product_name == res[idx].data.name){
-          packages.push(item)
-          
-          return
-        }
-      }
-    })
-  }).then(()=> {
-    getComponents(packages)
-
-    // productPackage.value=res
-
-    // console.log(`productPackage >>>>> ${JSON.stringify(productPackage.value)}`)
-
-     
+const parseOrderDetails=items=>{
+  const itemState=[false, true]
  
+  return itemState.forEach(state=> {
 
+    // get product Type inside the Order details and store the values into separate variable
+    getProductByType(state).then(res => {
+      const temp =[]
 
+      res.forEach(data =>{
+        const obj = items.find(obj => obj.product_name === data.data.name)
+
+        if(obj){
+          // add component object into order details
+          obj.components = data.data.components
+          temp.push(obj)
+        }
+        
+        return temp
+      })
+      if(state){
+        parseOrder.value['package'] = temp
+      }else{
+        parseOrder.value['regular'] = temp
+      }
+    }).then(() => {
+      getOrderSummary(parseOrder.value['regular'], parseOrder.value['package'])
+    })
   })
 }
 
@@ -248,6 +186,22 @@ const formatNumber = number => {
   return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
 }
 
+// eslint-disable-next-line sonarjs/cognitive-complexity
+const sortArrObj = (arrObj, sortBy, asc=true) => {
+  if(asc){
+    return  arrObj.sort(
+      (prop1, prop2) => 
+        (prop1[sortBy] > prop2[sortBy]) ? 1 : (prop1[sortBy] < prop2[sortBy]) ? -1 : 0)
+  } 
+  else{
+    arrObj.sort(
+      (prop1, prop2) => 
+        (prop1[sortBy] < prop2[sortBy]) ? 1 : (prop1[sortBy] > prop2[sortBy]) ? -1 : 0)
+
+  }
+}
+
+
 // for debugginf purpose
 const debuggerBtn = () => {
   const a= [{ "qty": "2", "price": "225000", "product_name": "Hampers A", "subtotal": 450000 }, { "qty": "2", "price": "225000", "product_name": "Hampers B", "subtotal": 450000 }]
@@ -255,18 +209,19 @@ const debuggerBtn = () => {
 
   // console.log(`order detail >>>> ${JSON.stringify(orderDetails.value)}`)
   // console.log(`products >>>> ${dialogPreview.value}`)
-  getComponents(a)
+  // getComponents(a)
   getPackTotal()
 }
 
 const debuggerBtn2 = () => {
-  const a= [{ "qty": "2", "price": "225000", "product_name": "Hampers A", "subtotal": 450000 }, { "qty": "2", "price": "225000", "product_name": "Hampers B", "subtotal": 450000 }]
+  // const a= [{ "qty": "2", "price": "225000", "product_name": "Hampers A", "subtotal": 450000 }, { "qty": "2", "price": "225000", "product_name": "Hampers B", "subtotal": 450000 }]
 
 
   // console.log(`order detail >>>> ${JSON.stringify(orderDetails.value)}`)
   // console.log(`products >>>> ${dialogPreview.value}`)
   // getComponents(a)
-  getPackTotal()
+  getOrderSummary(parseOrder.value['regular'], parseOrder.value['package'])
+  
 }
 </script>
 
@@ -415,7 +370,7 @@ const debuggerBtn2 = () => {
                   <VListItem link>
                     <VListItemTitle
                       class="text-subtitle-2 text-primary"
-                      @click="dialogPreview=true; getOrderDetails(orders[7].data.order_details)"
+                      @click="dialogPreview=true; parseOrderDetails(item.data.order_details)"
                     >
                       View
                     </VListItemTitle>
@@ -597,8 +552,8 @@ const debuggerBtn2 = () => {
                           </template>
 
                           <VListItem
-                            v-for="(item) in productRegular"
-                            :key="item.order_no"
+                            v-for="(item) in parseOrder.regular"
+                            :key="item.product_name"
                             :ripple="false"
                             density="compact"
                             class="text-subtitle-2 py-0"
@@ -633,7 +588,7 @@ const debuggerBtn2 = () => {
                           </template>
 
                           <VListGroup
-                            v-for="(item) in productPackage"
+                            v-for="(item) in parseOrder.package"
                             :key="item.order_no"
                             :ripple="false"
                             :value="item.product_name"
@@ -686,18 +641,18 @@ const debuggerBtn2 = () => {
                           </template>
 
                           <VListItem
-                            v-for="(item) in productRegular"
-                            :key="item.order_no"
+                            v-for="(i) in parseOrder.summary"
+                            :key="i.product_name"
                             :ripple="false"
                             density="compact"
                             class="text-subtitle-2 py-0"
                           >
                             <VRow>
                               <VCol cols="9">
-                                {{ item.product_name }}
+                                {{ i.product_name }}
                               </VCol>
                               <VCol cols="3">
-                                {{ item.qty }} pack
+                                {{ i.qty }} pack
                               </VCol>
                             </VRow>
                           </VListItem>

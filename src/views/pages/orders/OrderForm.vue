@@ -463,7 +463,7 @@ const debuggerBtn = () => {
                   sm="8"
                 >
                   <VTextField
-                    v-model="field.price"
+                    v-model.number="field.price"
                     class="border-"
                     label="Price"
                     placeholder="0"
@@ -480,7 +480,7 @@ const debuggerBtn = () => {
                   sm="4"
                 >
                   <VTextField
-                    v-model="field.qty"
+                    v-model.number="field.qty"
                     label="Qty"
                     placeholder="0"
                     density="compact"
@@ -510,7 +510,7 @@ const debuggerBtn = () => {
                   color="error"
                   @click="removeField(index)"
                 >
-                  <VIcon icon="bx-basket" />
+                  <VIcon icon="bx-bxs-trash-alt" />
                 </VBtn>
               </div>
             </VCard>
