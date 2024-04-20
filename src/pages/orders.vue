@@ -8,12 +8,20 @@ const store = useStore()
 // const isMainPageValue = computed(() => store.state.isMainPage)
 const isMainPage = ref(true)
 const isEdit = ref(false)
+const editVal = ref()
 
 // const newOrder = () => {
 //   // isMainPage.value= false
 //   store.commit('setMainPage', false)
 //   console.log('isMainPage value:', isMainPageValue.value)
 // }
+
+const getEditValue = order => {
+  console.log(`JAJAJAJA ${JSON.stringify(order)}`)
+  isEdit.value=true
+
+  editVal.value=order
+}
 
 const backToOrderList = () => {
   // isMainPage.value= true
@@ -27,7 +35,7 @@ const backToOrderList = () => {
   // console.log('udpateValies value Back:', JSON.stringify(store.state.updateValues))
 }
 
-watch( () => isEdit.value, () => {
+watch( () => isMainPage.value, () => {
   console.log(`is edit order.vue >>> ${isEdit.value}`)
   console.log(`isMainPage order.vue >>> ${isMainPage.value}`)
 
@@ -59,7 +67,7 @@ onMounted(async () => {
           <div v-if="isMainPage">
             <OrderList
               @main-page-close="isMainPage=false"
-              @is-edit="isEdit=true"
+              @is-edit="getEditValue"
             />
             <VBtn
               block
@@ -77,7 +85,10 @@ onMounted(async () => {
 
           <VCardText v-else>
             <VCol col="12">
-              <OrderForm :edit="isEdit" />
+              <OrderForm
+                :edit="isEdit"
+                :edit-value="editVal"
+              />
             </VCol>
           </VCardText>
 

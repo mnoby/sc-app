@@ -39,8 +39,9 @@ const headers=ref([
 
 watch( () => editClicked.value, () => {
   console.log(`prop main page >>> ${editClicked.value}`)
-  emit('mainPageClose')
-  emit('isEdit')
+
+  // emit('mainPageClose')
+  // emit('isEdit', editSelectedVal.value )
 
   // prop.isMainPage=false
 })
@@ -70,6 +71,8 @@ const getOrders = () => {
 
 const updateOrder=order=>{
   editClicked.value=true
+  emit('isEdit', order)
+  emit('mainPageClose')
 
   // console.log (`Id >>>>>>>>>>>> ${JSON.stringify(order)}`)
 
@@ -285,7 +288,7 @@ const debuggerBtn2 = () => {
               <ActionMenu
                 :data="item"
                 :products="products"
-                @main-page-close="updateOrder(item.data)"
+                @main-page-close="updateOrder(item)"
               />
             </VButton>
           </template>

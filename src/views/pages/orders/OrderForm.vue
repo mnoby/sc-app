@@ -6,7 +6,7 @@ import OrderService from '@/services/OrderService'
 import ProductService from '@/services/ProductService'
 import { VCardText } from 'vuetify/lib/components/index.mjs'
 
-const prop = defineProps(['edit'])
+const prop = defineProps(['edit', 'editValue'])
 
 const isEdit=ref(false)
 const YYYYMMDD = new Date().toISOString()
@@ -36,7 +36,6 @@ const orderData = ref({
   delivery_type: null,
   note: '',
   total: '',
-  order_date: new Date(),
   active: true,
   paid: false,
 })
@@ -51,20 +50,10 @@ const dialog=ref(false)
 const myForm = ref()
 
 
-watch( () => prop.edit, () => {
-  isEdit.value = prop.edit
 
-  
-})
 
 // Fetch Datas from DB on Mounted
 onMounted(async () => {
-  console.log(`onmounted prop edit in orderForm >> ${prop.edit}`)
-  if(prop.edit){
-    orderDetails.value='input the value here'
-    orderData.value = 'input the value here'
-  }
-
   //Get Cities Data
   await CityService.getAll().get().then(res => {
     cities.value = res.docs.map(doc => ({ id: doc.id, cityName: doc.data().name }))
@@ -83,6 +72,18 @@ onMounted(async () => {
   // Fetch Orders Data
   getOrders()
 
+  // Check the Form Condition, Create Or Edit
+  if(prop.edit){
+    console.log(` IF >> ${JSON.stringify(prop.editValue)}`)
+    orderDetails.value=prop.editValue.data.order_details
+    orderData.value=prop.editValue.data
+
+  //   orderData.value.customer_details=prop.editValue.data.customer_details
+  //   orderData.value.delivery_type=prop.editValue.data.delivery_type
+  //   orderData.value.note=prop.editValue.data.note
+  //   orderData.value.order_no=prop.editValue.data.order_no
+  }
+
 })
 
 const rules = [
@@ -98,17 +99,28 @@ const saveOrder = () => {
   myForm.value?.validate().then(({ valid: isValid }) => {
     console.log(`tetoot >>> ${isValid}`)
     if(isValid){
-      OrderService.create(orderData.value)
-        .then(() => {
-          dialog.value = true
-          console.log("Created new item successfully!")
-        
-          //reset all fields
-          resetForm()
+      if(prop.edit){
+        orderData.value.update_at= new Date()
+        OrderService.update(prop.editValue.id, orderData.value).then(()=> {
+          console.log("Updated item successfully!")
+          
         })
-        .catch(e => {
-          console.log(e)
-        }) 
+      }else {
+        orderData.value.order_date= new Date()
+        orderData.value.update_at= ''
+        OrderService.create(orderData.value)
+          .then(() => {
+            dialog.value = true
+            console.log("Created new item successfully!")
+        
+            //reset all fields
+            resetForm()
+          })
+          .catch(e => {
+            console.log(e)
+          }) 
+      }
+      
     } else {
       console.log(`masih ada yang ksong tuh`)
     }
@@ -130,6 +142,7 @@ const getOrders = () => {
 // Parsing Order Number
 const orderNumberParser = number => {
   let nextNumber = 0
+  
   if(number.length > 0){
     const splitNumber =number.toString().split('-')
 
@@ -373,7 +386,7 @@ const debuggerBtn = () => {
           item-value="cityName"
           item-title="cityName"
           clearable
-          @update:model-value="generateNewOrderNumber(orderData.customer_details.city)"
+          @update:model-value="prop.edit? prop.editValue.data.order_no: generateNewOrderNumber(orderData.customer_details.city)"
         />
       </VCol>
 

@@ -114,6 +114,7 @@ const sortArrObj = (arrObj, sortBy, asc=true) => {
     class="ma-0"
   >
     <!-- {{ props.data }} -->
+    {{ isOpen }}
     <VIcon
       size="large"
       icon="bx-dots-vertical-rounded"
@@ -131,7 +132,7 @@ const sortArrObj = (arrObj, sortBy, asc=true) => {
         <VListItem link>
           <VListItemTitle
             class="text-subtitle-2 text-primary"
-            @click="isOpen=true; parseOrderDetails(props.data.data.order_details)"
+            @click="isOpen=!isOpen; parseOrderDetails(props.data.data.order_details)"
           >
             View
           </VListItemTitle>
@@ -181,6 +182,6 @@ const sortArrObj = (arrObj, sortBy, asc=true) => {
   <DialogPreview
     :dialog-preview="isOpen"
     :parse-order="parseOrder"
-    @modal-close="isOpen=false"
+    @modal-close="isOpen=!isOpen"
   />
 </template>
