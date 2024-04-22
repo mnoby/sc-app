@@ -1,15 +1,33 @@
 <script setup>
+import DialogConfirmation from './DialogConfirmation.vue'
 import DialogPreview from './DialogPreview.vue'
 
 const props = defineProps(['data', 'products', 'isMainPage'])
-const emit = defineEmits(["mainPageClose"])
-const isOpen=ref(false)
+const emit = defineEmits(['mainPageClose', 'approveDelete', 'approveUpdate'])
+const isOpen=ref({})
+const menus=ref(['View', 'Edit', 'Delete', 'Set Bill'])
 
 const parseOrder=ref({
   regular: '',
   package: '',
   summary: '',
 })
+
+const openModal=menu=>{
+  if(!isOpen.value[menu]){
+    isOpen.value[menu]=true
+  } else{
+    isOpen.value[menu]=!isOpen.value[menu]
+  }
+}
+
+const actions=menu=>{
+  if(menu=='View'){
+    parseOrderDetails(props.data.data.order_details)
+  } else if (menu=='Edit'){
+    emit('mainPageClose')
+  }
+}
 
 const getProductByType=isPackage=> {  
   return new Promise((resolve, reject) => {
@@ -110,78 +128,75 @@ const sortArrObj = (arrObj, sortBy, asc=true) => {
   <VButton
     type="submit"
     color="warning"
-    variant="tonal"
     class="ma-0"
   >
-    <!-- {{ props.data }} -->
-    {{ isOpen }}
     <VIcon
       size="large"
       icon="bx-dots-vertical-rounded"
       color="warning"
     />
-    <!-- SECTION Menu -->
+    <!-- 👉 SECTION Menu -->
     <VMenu
       activator="parent"
       width="80px"
-      location="bottom end"
+      location="end"
       offset="5px"
     >
-      <VList>
+      <VList class="py-0">
         <!-- 👉 View -->
-        <VListItem link>
-          <VListItemTitle
-            class="text-subtitle-2 text-primary"
-            @click="isOpen=!isOpen; parseOrderDetails(props.data.data.order_details)"
-          >
-            View
-          </VListItemTitle>
-        </VListItem>
-
-        <!-- 👉 Edit -->
-        <VListItem link>
-          <VListItemTitle
-            class="text-subtitle-2 text-primary"
-            @click="emit('mainPageClose')"
-          >
-            Edit
-          </VListItemTitle>
-        </VListItem>
-
-        <!-- 👉 Delete -->
-        <VListItem link>
-          <VListItemTitle class="text-subtitle-2 text-error">
-            Delete
-          </VListItemTitle>
-        </VListItem>
-
-        <!-- Divider -->
-        <VDivider class="my-2" />
-
-        <!-- 👉 Set Bill Status -->
-        <VListItem link>
-          <VListItemTitle class="text-subtitle-2 text-warning">
-            Set Bill
-          </VListItemTitle>
-        </VListItem>
+        <div
+          v-for="(menu, idx) in menus"
+          :key="idx"
+        >
+          <VDivider
+            v-if="menu=='Set Bill'"
+            class="my-2"
+          />
+          <VListItem link>
+            <VListItemTitle
+              class="text-subtitle-2 text-wrap"
+              :class="[menu=='Delete'? 'text-error' : 'text-primary'], [menu=='Set Bill'? 'text-warning' : 'text-primary']"
+              @click="openModal(menu); actions(menu)"
+            >
+              {{ menu=='Set Bill' ? props.data.data.paid? `${menu} Unpaid`: `${menu} Paid` : menu }}
+            </VListItemTitle>
+          </VListItem>
+        </div>
       </VList>
     </VMenu>
     <!-- !SECTION -->
   </VButton>
-
-  <!-- OrderForm Component -->
-  <!--
-    <OrderForm
-    v-model=""
-    :edit-flow="isEdit"
-    :order-data="props.data.data"
-    />
-  -->
-          
-  <!-- Dialog Preview Component -->
+  
+  <!-- 👉 Dialog Preview Component -->
   <DialogPreview
-    :dialog-preview="isOpen"
+    :preview-state="isOpen['View']"
     :parse-order="parseOrder"
-    @modal-close="isOpen=!isOpen"
+    @modal-close="isOpen['View']=!isOpen['View']"
   />
+
+  <!-- 👉 Dialog Delete Confirmation Component -->
+  <DialogConfirmation
+    :confirmation-state="isOpen['Delete']"
+    @modal-close="isOpen['Delete']=!isOpen['Delete']"
+    @approve-clicked="isOpen['Delete']=!isOpen['Delete']; emit('approveDelete')"
+  >
+    <template #confirm-text>
+      Remove <br>
+      <span class=" text-body-2 mb-0 pa-0 font-weight-black text-warning"> {{ props.data.data.order_no }}  </span> <br>
+      <span> form Order List ?</span>
+    </template>
+  </DialogConfirmation>
+
+  <!-- 👉 Dialog Set Bill Confirmation Component -->
+  <DialogConfirmation
+    :confirmation-state="isOpen['Set Bill']"
+    @modal-close="isOpen['Set Bill']=!isOpen['Set Bill']"
+    @approve-clicked="isOpen['Set Bill']=!isOpen['Set Bill']; emit('approveUpdate')"
+  >
+    <template #confirm-text>
+      Update Bill of <br>
+      <span class=" text-body-2 mb-0 pa-0 font-weight-black text-warning"> {{ props.data.data.order_no }}  </span> <br>
+      <span> as {{ props.data.data.paid? `Unpaid`: `Paid` }} ?</span>
+    </template>
+  </DialogConfirmation>
 </template>

@@ -28,7 +28,6 @@ const getProducts = () => {
 }
 
 const updateProduct=product=>{
-  // console.log (`Id >>>>>>>>>>>> ${product.id}`)
   let data = {
     id: product.id,
     details: {
@@ -55,7 +54,6 @@ const getDeletedData = (productId, productName) => {
 
 const deleteProduct=productId=>{
   ProductService.delete(productId)
-  console.log(`Product ${productId} Deleted Successfully`)
   dialog2.value=true
 }
 

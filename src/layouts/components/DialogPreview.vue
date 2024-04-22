@@ -1,9 +1,8 @@
 <script setup>
-const prop = defineProps(['dialogPreview', 'parseOrder'])
+const prop = defineProps(['previewState', 'parseOrder'])
 
 const emit = defineEmits(["modalClose"])
-const open=ref(['Regular', 'Package'])
-const isOpen = ref(false)
+const isOpens = ref(false)
 const target = ref(null)
 const expandState=ref(true)
 const expandState2=ref(true)
@@ -12,10 +11,11 @@ const subExpandState2=ref({})
 // const subExpandState2=ref(true)
 const expandState3=ref(true)
 
-onClickOutside(target, ()=>emit('modalClose'))
+// onClickOutside(target, ()=>emit('modalClose'))
 
-watch(() => prop.dialogPreview, () => {
-  isOpen.value = prop.dialogPreview
+watch(() => prop.previewState, () => {
+  console.log(`prop previewState ${JSON.stringify(prop.parseOrder)}`)
+  isOpens.value = prop.previewState
 })
 
 
@@ -30,13 +30,11 @@ const subExpandState2Switcher=index=>{
 
 <template>
   <VDialog
-    v-model="isOpen"
+    v-model="isOpens"
+    z-index="99999"
     max-width="720px"
   >
-    <VCard
-      ref="target"
-      class="rounded-lg pa-4"
-    >
+    <VCard class="rounded-lg pa-4">
       <VRow>
         <!-- Regular Items Col -->
         <VCol

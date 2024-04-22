@@ -21,24 +21,18 @@ const checks = () => {
 const newProduct = () => {
   // isMainPage.value= false
   store.commit('setMainPage', false)
-  console.log('isMainPage value:', isMainPageValue.value)
 }
 
 const backToProductList = () => {
   // isMainPage.value= true
   store.commit('setMainPage', true)
   store.commit('setUpdateValues', undefined)
-
-  console.log('isMainPage value Back:', isMainPageValue.value)
-  console.log('udpateValies value Back:', JSON.stringify(store.state.updateValues))
 }
 
 onMounted(async () => {
   try {
     store.commit('setMainPage', true)
     store.commit('setUpdateValues', undefined)
-    console.log('isMainPage value:', isMainPageValue.value)
-    console.log('udpateValies value:', JSON.stringify(store.state.updateValues))
   } catch (error) {
     console.error('Error fetching delivery options: ', error)
   }
@@ -50,7 +44,21 @@ onMounted(async () => {
     <VRow>
       <VCol cols="12">
         <!-- 👉 Horizontal Form -->
-        <VCard title="Products">
+        <VCard>
+          <!-- ============ BACK BUTTON ================================= -->
+          
+          <VBtn
+            v-if="!isMainPageValue"
+            class="rounded-b-0"
+            color="primary"
+            prepend-icon="bx-bxs-chevron-left-circle"
+            block
+            @click="backToProductList"
+          >
+            Go to Product List
+          </VBtn>
+
+          <VCardTitle> Product Menu </VCardTitle>
           <!-- ========================== MAIN CONTENT ================================= -->
           <div v-if="isMainPageValue">
             <ProductList />
@@ -61,31 +69,18 @@ onMounted(async () => {
               @click="newProduct"
             >
               <VIcon
-                icon="bx-book-add"
+                icon="bx-bxs-plus-circle"
                 class="mr-2"
               />
               Add Product
             </VBtn>
           </div>
 
-          <VCardText v-else>
+          <div v-else>
             <VCol col="12">
               <ProductForm />
             </VCol>
-          </VCardText>
-
-
-          <!-- ============ BACK BUTTON ================================= -->
-          
-          <VBtn
-            v-if="!isMainPageValue"
-            block
-            class="rounded-t-0"
-            color="primary"
-            @click="backToProductList"
-          >
-            Back to Product List
-          </VBtn>
+          </div>
         </VCard>
       </VCol>
 
