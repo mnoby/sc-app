@@ -82,12 +82,6 @@ const checkDigit = () => {
 </script>
 
 <template>
-  <VBtn
-    text="check"
-    @click="checks"
-  />
-  
-
   <VForm @submit.prevent="saveProduct">
     <VRow>
       <VCol cols="12">
@@ -197,9 +191,12 @@ const checkDigit = () => {
         offset-md="3"
         cols="12"
         md="9"
-        class="d-flex gap-4 justify-end mb-4"
+        class="d-flex justify-end"
       >
-        <VBtn type="submit">
+        <VBtn
+          type="submit"
+          class="rounded-t-0"
+        >
           Save
         </VBtn>
       </VCol>

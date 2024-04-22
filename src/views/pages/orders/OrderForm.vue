@@ -1,11 +1,15 @@
 <!-- eslint-disable promise/no-nesting -->
 <script setup>
+import DialogNotif from '@/layouts/components/DialogNotif.vue'
 import CityService from '@/services/CityService'
 import DeliveryService from '@/services/DeliveryService'
 import OrderService from '@/services/OrderService'
 import ProductService from '@/services/ProductService'
-import { VCardText } from 'vuetify/lib/components/index.mjs'
 
+const prop = defineProps(['edit', 'editValue'])
+const emit = defineEmits(['mainPageClose'])
+
+// const isEdit=ref(false)
 const YYYYMMDD = new Date().toISOString()
 const splitDate= YYYYMMDD.substring(0, 10).split('-')
 
@@ -33,17 +37,11 @@ const orderData = ref({
   delivery_type: null,
   note: '',
   total: '',
-  order_date: new Date(),
   active: true,
   paid: false,
 })
 
-watch( () => orderDetails.value,
-  count => {
-    console.log(`count is: ${count}`)
-  })
-
-
+const formAction=ref()
 const deliveryTypes = ref()
 const products=ref()
 const deleted=ref([])
@@ -52,6 +50,10 @@ const cityCode=ref()
 const orderCount=ref()
 const dialog=ref(false)
 const myForm = ref()
+const notifState=ref(false)
+
+
+
 
 // Fetch Datas from DB on Mounted
 onMounted(async () => {
@@ -73,6 +75,12 @@ onMounted(async () => {
   // Fetch Orders Data
   getOrders()
 
+  // Check the Form Condition, Create Or Edit
+  if(prop.edit){
+    orderDetails.value=prop.editValue.data.order_details
+    orderData.value=prop.editValue.data
+  }
+
 })
 
 const rules = [
@@ -86,21 +94,26 @@ const rules = [
 // Send Order Data to Database
 const saveOrder = () => {
   myForm.value?.validate().then(({ valid: isValid }) => {
-    console.log(`tetoot >>> ${isValid}`)
     if(isValid){
-      OrderService.create(orderData.value)
-        .then(() => {
-          dialog.value = true
-          console.log("Created new item successfully!")
-        
-          //reset all fields
-          resetForm()
+      if(prop.edit){
+        formAction.value='Updated'
+        orderData.value.update_at= new Date()
+        OrderService.update(prop.editValue.id, orderData.value).then(()=> {
+          notifState.value=true
         })
-        .catch(e => {
-          console.log(e)
-        }) 
-    } else {
-      console.log(`masih ada yang ksong tuh`)
+      }else {
+        formAction.value='Created'
+        orderData.value.order_date= new Date()
+        orderData.value.update_at= ''
+        OrderService.create(orderData.value)
+          .then(() => {
+            notifState.value=true
+          })
+          .catch(e => {
+            console.log(e)
+          }) 
+      }
+      
     }
   })
 
@@ -120,6 +133,7 @@ const getOrders = () => {
 // Parsing Order Number
 const orderNumberParser = number => {
   let nextNumber = 0
+  
   if(number.length > 0){
     const splitNumber =number.toString().split('-')
 
@@ -148,13 +162,16 @@ const getCityCode = cityName => {
 
 const generateNewOrderNumber = cityName => {
 // Parse the Latest Order Number
-  getCityCode(cityName)
-  if(cityCode.value.length > 0 ){
-    orderData.value.order_no = `${fullYYYY}-${fullMMDD}-${cityCode.value}-${orderCount.value.parsed}`
-  } else {
-    orderData.value.order_no = `${fullYYYY}-${fullMMDD}-undefined-${orderCount.value.parsed}`
+  if(!prop.edit){
+
+    getCityCode(cityName)
+    if(cityCode.value.length > 0 ){
+      orderData.value.order_no = `${fullYYYY}-${fullMMDD}-${cityCode.value}-${orderCount.value.parsed}`
+    } else {
+      orderData.value.order_no = `${fullYYYY}-${fullMMDD}-undefined-${orderCount.value.parsed}`
+    }
   }
-}
+} 
 
 // Method to add a new field
 const addField = () => {
@@ -255,6 +272,15 @@ const resetForm = () => {
   }
 }
 
+const modalClose=()=>{
+  notifState.value=false
+  if(!prop.edit){
+    resetForm()
+  }else {
+    console.log(`emot pageCLose`)
+    emit('mainPageClose')
+  }
+}
 
 // Add Numbet Delimiter Function
 const formatNumber = number => {
@@ -271,22 +297,8 @@ const debuggerBtn = () => {
 </script>
 
 <template>
-  <VBtn
-    type="debug"
-    size="small"
-    color="success"
-    @click="debuggerBtn"
-  >
-    <VIcon icon="bx-add-to-queue" />
-    <span class="ms-2">Check Order Details</span>
-  </VBtn>  
-   
-
-  <VForm
-    ref="myForm"
-    @submit.prevent=""
-  >
-    <VRow class="mx-2">
+  <VForm ref="myForm">
+    <VRow class="mx-0">
       <!-- 👉 Order Number -->
       <VCol
         cols="12"
@@ -463,7 +475,7 @@ const debuggerBtn = () => {
                   sm="8"
                 >
                   <VTextField
-                    v-model="field.price"
+                    v-model.number="field.price"
                     class="border-"
                     label="Price"
                     placeholder="0"
@@ -480,7 +492,7 @@ const debuggerBtn = () => {
                   sm="4"
                 >
                   <VTextField
-                    v-model="field.qty"
+                    v-model.number="field.qty"
                     label="Qty"
                     placeholder="0"
                     density="compact"
@@ -510,7 +522,7 @@ const debuggerBtn = () => {
                   color="error"
                   @click="removeField(index)"
                 >
-                  <VIcon icon="bx-basket" />
+                  <VIcon icon="bx-bxs-trash-alt" />
                 </VBtn>
               </div>
             </VCard>
@@ -520,7 +532,7 @@ const debuggerBtn = () => {
     </VRow>
     <VBtn
       block
-      class="d-flex y-0 rounded-t-0"
+      class="d-flex rounded-t-0 mt-8"
       type="submit"
       @click="saveOrder"
     >
@@ -530,45 +542,25 @@ const debuggerBtn = () => {
 
   <!-- ////////////////////// MODAL ///////////////// -->
 
-  <div class="text-center">
-    <VDialog
-      v-model="dialog"
-      z-index="9999"
-      max-width="320"
-    >
-      <VCard class="rounded-lg">
-        <template #text>
-          <!-- close Button -->
-          <VCardActions class="py-0 px-0">
-            <VSpacer />
-          
-            <VBtn
-              text="Close"
-              variant="text"
-              @click="dialog = false"
-            > 
-              <VIcon
-                icon="bx-x-circle"
-                color="disabled"
-                size="32"
-              />
-            </VBtn>
-          </VCardActions>
-
-          <!-- Success Icon -->
-          <div class="text-center mt-4">
-            <VIcon
-              class="mb-4"
-              color="success"
-              icon="mdi-check-circle-outline"
-              size="128"
-            />
-            <h2> {{ orderData.order_no }} </h2>
-            <span>has been Created Successfully !</span>
-          </div>
-        </template>
-      </VCard>
-    </VDialog>
-  </div>
+  <DialogNotif
+    :modal-open="notifState"
+    @modal-close="modalClose"
+  >
+    <template #modal-content>
+      <VIcon
+        class="me-0"
+        color="success"
+        icon="mdi-check-circle-outline"
+        size="164"
+      />
+    </template>
+    <template #modal-subcontent>
+      <h2>
+        YEAY !!!
+      </h2>
+      <span class="text-subtitle-1 mb-0 pa-0"> {{ orderData.order_no }} </span> <br>
+      <span class="mt-0 pt-0">has been {{ formAction }} Successfully !</span>
+    </template>
+  </DialogNotif>
 </template>
 

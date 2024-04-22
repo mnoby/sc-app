@@ -1,19 +1,24 @@
 <!-- eslint-disable vue/attribute-hyphenation -->
 <script setup>
 import ActionMenu from '@/layouts/components/ActionMenu.vue'
+import DialogNotif from '@/layouts/components/DialogNotif.vue'
 import OrderService from '@/services/OrderService'
 import ProductService from '@/services/ProductService'
-import { useStore } from 'vuex'
 
-const store = useStore()
-const deletedData = ref()
-const products=ref([])
-const orderSum=ref([])
-const orders=ref([])
-const dialog=ref(false)
-const dialog2=ref(false)
+// const prop = defineProps(['isMainPage'])
+const emit = defineEmits(['mainPageClose', 'isEdit'])
+const modalProp=ref({})
 const search=ref()
+const products=ref([])
+const orders=ref([])
+const notifState=ref(false)
+const editClicked=ref(false)
 
+const parseOrder=ref({
+  regular: '',
+  package: '',
+  summary: '',
+})
 
 const headers=ref([
   {  key: 'actions', title: '', sortable: false },
@@ -21,16 +26,23 @@ const headers=ref([
     align: 'start',
     key: 'data.order_no',
     sortable: false,
-    title: 'Order Number',
-    
+    title: 'Order Number',  
   },
   { key: 'data.customer_details.name', title: 'Name' },
   { key: 'data.delivery_type', title: 'Delivery' },
   { key: 'data.customer_details.city', title: 'City' },
-  { key: 'data.total', title: 'Total (Rp)' },
+  { key: 'data.total', title: 'Bill (Rp)' },
   { key: 'data.paid', title: 'Payment Status' },
 ])
 
+watch( () => editClicked.value, () => {
+  // console.log(`prop main page >>> ${editClicked.value}`)
+
+  // emit('mainPageClose')
+  // emit('isEdit', editSelectedVal.value )
+
+  // prop.isMainPage=false
+})
 onMounted(async () => {
   try{
     getProducts()
@@ -50,88 +62,57 @@ const getProducts = () => {
 const getOrders = () => {
   OrderService.getAll('order_no', 'asc').where('active', '==', true).get().then(res => {
     orders.value = res.docs.map(doc => ({ id: doc.id, data: doc.data() }))
-    console.log(`orders >>>> ${JSON.stringify(orders.value.length)}`)
   })
 }
 
-const updateProduct=product=>{
-  // console.log (`Id >>>>>>>>>>>> ${product.id}`)
-  let data = {
-    id: product.id,
-    details: {
-      name: product.name,
-      price: product.price,
-      package: product.package,
-      components: product.components,
-    },
-  }
-  store.commit('setMainPage', false)
-  store.commit('setUpdateValues', data)
-
-  // console.log('udpateValues From List productList:', JSON.stringify(store.state.updateValues))
-  // console.log(`YAAAA ${JSON.stringify(data)}`)
+const updateOrder=order=>{
+  editClicked.value=true
+  emit('isEdit', order)
+  emit('mainPageClose')
 }
 
-const getDeletedData = (productId, productName) => {
-  deletedData.value={
-    id: productId,
-    name: productName,
-  }
-  dialog.value = true
+const deleteProduct=order=>{
+  modalProp.value.action='Deleted'
+  modalProp.value.data=order.data.order_no
+  OrderService.delete(order.id).then(()=> {
+    notifState.value=true
+  })
 }
 
-const deleteProduct=productId=>{
-  ProductService.delete(productId)
-  console.log(`Product ${productId} Deleted Successfully`)
-  dialog2.value=true
-}
+const updateBillStat=orders=>{
+  const stat = !orders.data.paid
 
-const reload = () =>{
-  products.value=''
-  getProducts()
-  dialog.value=false
-  dialog2.value=false
+  modalProp.value.action='Updated'
+  modalProp.value.setBill=true
+  modalProp.value.data=orders.data.order_no
+  OrderService.update(orders.id, { paid: stat }).then(()=> {
+    notifState.value=true
+  })
 }
 
 const formatNumber = number => {
   return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
 }
 
+const modalClose=()=>{
+  notifState.value=false
+  getOrders()
+}
+
 // for debugginf purpose
 const debuggerBtn = () => {
   const a= [{ "qty": "2", "price": "225000", "product_name": "Hampers A", "subtotal": 450000 }, { "qty": "2", "price": "225000", "product_name": "Hampers B", "subtotal": 450000 }]
 
-
-  // console.log(`order detail >>>> ${JSON.stringify(orderDetails.value)}`)
-  // console.log(`products >>>> ${dialogPreview.value}`)
-  getComponents(a)
   getPackTotal()
 }
 
 const debuggerBtn2 = () => {
-  const a= [{ "qty": "2", "price": "225000", "product_name": "Hampers A", "subtotal": 450000 }, { "qty": "2", "price": "225000", "product_name": "Hampers B", "subtotal": 450000 }]
-
-
-  // console.log(`order detail >>>> ${JSON.stringify(orderDetails.value)}`)
-  // console.log(`products >>>> ${dialogPreview.value}`)
-  // getComponents(a)
-  getPackTotal()
+  getOrderSummary(parseOrder.value['regular'], parseOrder.value['package'])
+  
 }
 </script>
 
 <template>
-  <!-- DEBUG BUTTOn -->
-  <VBtn
-    type="debug"
-    size="small"
-    color="success"
-    @click="debuggerBtn"
-  >
-    <VIcon icon="bx-add-to-queue" />
-    <span class="ms-2">DEBUG</span>
-  </VBtn> 
-  <!-- DEBUG BUTTOn END -->
-
   <VRow>
     <VCol cols="12">
       <VCard flat>
@@ -172,7 +153,7 @@ const debuggerBtn2 = () => {
                 {{ item.data.order_details[0].product_name }}
               </td>
               <td :colspan="1">
-                {{ item.data.order_details[0].qty }} pack
+                {{ item.data.order_details[0].qty }} toples
               </td>
             </tr>
           </template>
@@ -203,13 +184,13 @@ const debuggerBtn2 = () => {
 
           <template #header.data.total>
             <div class="text-start text-primary">
-              Total (Rp)
+              Bill (Rp)
             </div>
           </template>
 
           <template #header.data.paid>
             <div class="text-end text-primary">
-              Bill
+              Status
             </div>
           </template>
 
@@ -239,109 +220,49 @@ const debuggerBtn2 = () => {
 
 
           <!-- <<<<<<<<<<<<<<< Dots Vertical Menus >>>>>>>>>>>>>>> -->
-          
           <template #item.actions="{ item }">
             <VButton
               type="submit"
               color="warning"
               variant="tonal"
               class="ma-0"
-            >              
+            >
               <ActionMenu
                 :data="item"
                 :products="products"
+                @main-page-close="updateOrder(item)"
+                @approve-delete="deleteProduct(item)"
+                @approve-update="updateBillStat(item)"
               />
             </VButton>
           </template>
-    
           <!-- <<<<<<<<<<<<<<< Dots Vertical Menus END >>>>>>>>>>>>>>> -->
         </VDataTable>
       </VCard>
-
-      <!--  <<<<<<<<<<<<<<<<<<< MODAL >>>>>>>>>>>>>>>>>>>  -->
-      <div class="text-center">
-        <VDialog
-          v-model="dialog"
-          z-index="9999"
-          max-width="240"
-        >
-          <VCard class="rounded-lg">
-            <template #text>
-              <div class="text-capitalize">
-                please confirm
-              </div>
-              <VDivider
-                class="border-opacity-25"
-                color="#000"
-              />
-              <div class="text-center mt-4">
-                <span class="text-body-2">Remove </span> <br>
-                <span class="text-subtitle-1 text-decoration-underline"> {{ deletedData.name }}</span> ?
-            
-            
-                <div class="d-flex align-center justify-center gap-x-6 mt-6">
-                  <VBtn
-                    text="Yes"
-                    size="small"
-                    color="error"
-                    @click="deleteProduct(deletedData.id)"
-                  /> 
-
-                  <VBtn
-                    text="No"
-                    size="small"
-                    color="info"
-                    @click="dialog2 = false; dialog = false"
-                  /> 
-                </div>
-              </div>
-            </template>
-          </VCard>
-        </VDialog>
-
-        <!-- DIALOG 2 -->
-        <VDialog
-          v-model="dialog2"
-          max-width="320"
-        >
-          <VCard class="rounded-lg">
-            <template #text>
-              <!-- close Button -->
-              <VCardActions class="py-0 px-0">
-                <VSpacer />
-          
-                <VBtn
-                  text="Close"
-                  variant="text"
-                  @click="reload"
-                > 
-                  <VIcon
-                    icon="bx-x-circle"
-                    color="disabled"
-                    size="32"
-                  />
-                </VBtn>
-              </VCardActions>
-
-              <!-- Success Icon -->
-              <div class="text-center mt-4">
-                <VIcon
-                  class="mb-4"
-                  color="success"
-                  icon="mdi-check-circle-outline"
-                  size="128"
-                />
-                <h2> {{ deletedData.name }} </h2>
-                <span>has been Deleted !</span>
-              </div>
-            </template>
-          </VCard>
-        </VDialog>
-
-        <!-- DIALOG PREVIEW -->
-        <!-- DIALOG PREVIEW END -->
-      </div>
-      <!--  <<<<<<<<<<<<<<<<<<< MODAL END >>>>>>>>>>>>>>>>>>>  -->
     </VCol>
   </VRow>
+
+  <!-- Dialog Notif -->
+  <DialogNotif
+    :modal-open="notifState"
+    @modal-close="modalClose"
+  >
+    <template #modal-content>
+      <VIcon
+        class="me-0"
+        color="success"
+        icon="mdi-check-circle-outline"
+        size="164"
+      />
+    </template>
+    <template #modal-subcontent>
+      <h2>
+        YEAY !!!
+      </h2>
+      <span class="text-subtitle-1 mb-0 pa-0"> {{ modalProp.data }} </span> <br>
+      <span class="mt-0 pt-0">{{ modalProp.setBill? 'Bill Status' : '' }} has been {{ modalProp.action }} Successfully !</span>
+    </template>
+  </DialogNotif>
 </template>
+
+

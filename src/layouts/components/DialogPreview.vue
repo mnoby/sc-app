@@ -1,203 +1,278 @@
 <script setup>
-const prop = defineProps(['dialogPreview', 'package', 'regular'])
+const prop = defineProps(['previewState', 'parseOrder'])
 
-const emit = defineEmits(["modallose"])
-const open=ref(['Regular', 'Package'])
-const isOpen = ref(false)
+const emit = defineEmits(["modalClose"])
+const isOpens = ref(false)
 const target = ref(null)
 const expandState=ref(true)
-const iconExpand=ref('bx-bxs-up-arrow')
+const expandState2=ref(true)
+const subExpandState2=ref({})
 
-onClickOutside(target, ()=>emit('modalClose'))
+// const subExpandState2=ref(true)
+const expandState3=ref(true)
 
-watch(() => prop.dialogPreview, () => {
-  isOpen.value = prop.dialogPreview
+// onClickOutside(target, ()=>emit('modalClose'))
+
+watch(() => prop.previewState, () => {
+  console.log(`prop previewState ${JSON.stringify(prop.parseOrder)}`)
+  isOpens.value = prop.previewState
 })
 
-const stateChange=()=>{
-  console.log(`state >> ${expandState.value}`)
-  expandState.value = !expandState.value
 
-  if(!expandState.value){
-    iconExpand.value='bx-bxs-down-arrow'
-  }else{
-    iconExpand.value='bx-bxs-up-arrow'
+const subExpandState2Switcher=index=>{
+  if(!subExpandState2.value[index]==undefined){
+    subExpandState2.value[index] = true
+  } else {
+    subExpandState2.value[index] = !subExpandState2.value[index]
   }
 }
 </script>
 
 <template>
   <VDialog
-    v-model="isOpen"
+    v-model="isOpens"
+    z-index="99999"
     max-width="720px"
   >
-    <VCard
-      ref="target"
-      class="rounded-lg "
-    >
+    <VCard class="rounded-lg pa-4">
       <VRow>
+        <!-- Regular Items Col -->
         <VCol
-          cols="10"
-          md="5"
-          sm="10"
-          xs="10"
-        > 
-          <VCardItem>
-            <!-- Button Regular Items -->
-            <div class="w-50">
-              <VBtn
-                variant="text"
-                density="compact"
-                size="small"
-                :ripple="false"
-                @click="stateChange"
-              >
-                Regular Items
-                <VIcon
-                  :icon="iconExpand"
-                  size="15px"
-                  end
-                />
-              </VBtn>
-              <VDivider class="w-100" />
-            </div>
-
-            <!-- Regular Items List -->
-          </VCardItem>
-        </VCol>
-      </VRow>
-      <VContainer>
-        <VList v-model:opened="open">
-          <VRow>
-            <VCol
-              cols="10"
-              md="6"
-              sm="10"
-              xs="10"
+          cols="12"
+          md="6"
+          sm="12"
+          xs="12"
+        >
+          <!-- Button Regular Items -->
+          <div class="w-50">
+            <VBtn
+              variant="text"
+              density="compact"
+              size="small"
+              class="font-weight-medium"
+              :ripple="false"
+              @click="expandState = !expandState"
             >
-              <!-- <<<<<<<<<<<<<<<<<<< REGULAR ITEM GROUP >>>>>>>>>>>>>>>>>>> -->
+              Regular Items
+              <VIcon
+                :icon="expandState? 'bx-bxs-up-arrow' : 'bx-bxs-down-arrow' "
+                size="15px"
+                end
+              />
+            </VBtn>
+            <VDivider class="w-100" />
+          </div>
 
-                  
-              <VListGroup value="Regular">
-                <template #activator="{ props }">
-                  <VListItem
-                    v-bind="props"
-                    title="Regular Items"
-                    density="compact"
-                    class="text-primary "
-                  />
-                </template>
+          <!-- Regular Items List -->
+          <VExpandTransition>
+            <VList
+              v-show="expandState"
+              v-if="prop.parseOrder.regular.length"
+              lines="one"
+            >
+              <VListItemTitle
+                v-for="(item) in prop.parseOrder.regular"
+                :key="item.product_name"
+                :ripple="false"
+                class="text-subtitle-2 text-high-emphasis text-capitalize"
+              >
+                <VRow class="h-10 ms-1">
+                  <VCol cols="9">
+                    {{ item.product_name }}
+                  </VCol>
+                  <VCol cols="1">
+                    <span class="font-weight-black"> {{ item.qty }}  </span> 
+                  </VCol>
+                  <VCol
+                    cols="1"
+                    class="ps-1"
+                  >
+                    <span> pack </span>
+                  </VCol>
+                </VRow>
+              </VListItemTitle>
+            </VList>
 
-                <VListItem
-                  v-for="(item) in prop.regular"
-                  :key="item.order_no"
-                  :ripple="false"
+            <VList
+              v-show="expandState"
+              v-else
+              lines="one"
+            >
+              <VListItemTitle
+                :ripple="false"
+                class="ms-2 text-error text-subtitle-2 text-high-emphasis text-capitalize"
+              >
+                Not Available
+              </VListItemTitle>
+            </VList>
+          </VExpandTransition>
+        </VCol>
+
+        <!-- Package Item Col -->
+        <VCol
+          cols="12"
+          md="6"
+          sm="12"
+          xs="12"
+        >
+          <!-- Button Package Items -->
+          <div class="w-50">
+            <VBtn
+              variant="text"
+              density="compact"
+              size="small"
+              class="font-weight-medium"
+              :ripple="false"
+              @click="expandState2 = !expandState2"
+            >
+              Package Items
+              <VIcon
+                :icon="expandState2? 'bx-bxs-up-arrow' : 'bx-bxs-down-arrow' "
+                size="15px"
+                end
+              />
+            </VBtn>
+            <VDivider class="w-100" />
+          </div>
+
+          <!-- Package Items List -->
+          <VExpandTransition>
+            <VList
+              v-show="expandState2"
+              v-if="prop.parseOrder.package.length"
+              lines="one"
+            >
+              <VListItemTitle
+                v-for="(item, idx) in prop.parseOrder.package"
+                :key="idx"
+                :ripple="false"
+                class="text-subtitle-2 text-high-emphasis text-capitalize"
+              >
+                <!-- SUBList Package Item -->
+                <VBtn
+                  variant="text"
                   density="compact"
-                  class="text-subtitle-2 py-0"
+                  size="small"
+                  width="100vw"
+                  class=" text-primary font-weight-medium justify-start"
+                  color="black"
+                  :ripple="false"
+                  :append-icon="subExpandState2[idx]? 'bx-chevron-up' : 'bx-chevron-down' "
+                  @click="subExpandState2Switcher(idx)"
                 >
                   <VRow>
-                    <VCol cols="9">
+                    <VCol>
                       {{ item.product_name }}
                     </VCol>
-                    <VCol cols="3">
-                      {{ item.qty }} pack
+                    <VCol cols="1">
+                      <span class="font-weight-black"> {{ item.qty }}  </span> 
+                    </VCol>
+                    <VCol
+                      cols="3"
+                      class="ps-1"
+                    >
+                      <span> pack </span>
                     </VCol>
                   </VRow>
-                </VListItem>
-              </VListGroup>
-            </VCol>
-
-            <VCol
-              cols="12"
-              md="6"
-              sm="12"
-              xs="12"
-            >
-              <!-- <<<<<<<<<<<<<<<<<<< PACKAGE ITEM GROUP >>>>>>>>>>>>>>>>>>> -->
-              <VListGroup value="Package">
-                <template #activator="{ props }">
-                  <VListItem
-                    v-bind="props"
-                    title="Package Items"
-                    density="compact"
-                    class=" text-primary"
-                  />
-                </template>
-
-                <VListGroup
-                  v-for="(item) in prop.package"
-                  :key="item.order_no"
-                  :ripple="false"
-                  :value="item.product_name"
-                  density="compact"
-                >
-                  <template #activator="{ props }">
-                    <VListItem
-                      v-bind="props"
-                      density="compact"
-                      class=" text-subtitle-2"
+                </VBtn>
+                  
+                <VExpandTransition>
+                  <VList
+                    v-show="subExpandState2[idx]"
+                    v-if="prop.parseOrder.package.length"
+                    lines="one"
+                  >
+                    <VListItemTitle
+                      v-for="(comp,idx) in item.components"
+                      :key="idx"
+                      :ripple="false"
+                      class="text-subtitle-2 text-high-emphasis text-capitalize"
                     >
-                      <VRow>
-                        <VCol cols="8">
-                          {{ item.product_name }} 
-                        </VCol>
-                        <VCol cols="4">
-                          {{ item.qty }} pack
+                      <VRow class="h-10 ms-3">
+                        <VCol cols="9">
+                          {{ comp }}
                         </VCol>
                       </VRow>
-                    </VListItem>
-                  </template>
-                  <VListItem
-                    v-for="(comp) in item.components"
-                    :key="comp"
-                    :ripple="false"
-                    density="compact"
-                    class="text-caption "
-                  >
-                    {{ comp }}
-                  </VListItem>
-                </VListGroup>
-              </VListGroup>
-            </VCol>
+                    </VListItemTitle>
+                    <VDivider />
+                  </VList>
+                </VExpandTransition>
+              </VListItemTitle>
+            </VList>
 
-            <VCol
-              cols="12"
-              md="12"
-              sm="12"
-              xs="12"
+            <VList
+              v-show="expandState2"
+              v-else
+              lines="one"
             >
-              <!-- <<<<<<<<<<<<<<<<<<< TOTAL GROUP >>>>>>>>>>>>>>>>>>> -->
-              <VListGroup value="Summary">
-                <template #activator="{ props }">
-                  <VListItem
-                    v-bind="props"
-                    title="Summary"
-                    density="compact"
-                    class="text-primary "
-                  />
-                </template>
+              <VListItemTitle
+                :ripple="false"
+                class="ms-2 text-error text-subtitle-2 text-high-emphasis text-capitalize"
+              >
+                Not Available
+              </VListItemTitle>
+            </VList>
+          </VExpandTransition>
+        </VCol>
 
-                <VListItem
-                  v-for="(item) in productRegular"
-                  :key="item.order_no"
-                  :ripple="false"
-                  density="compact"
-                  class="text-subtitle-2 py-0"
-                >
-                  <VRow>
-                    <VCol cols="9">
-                      {{ item.product_name }}
-                    </VCol>
-                    <VCol cols="3">
-                      {{ item.qty }} pack
-                    </VCol>
-                  </VRow>
-                </VListItem>
-              </VListGroup>
-            </VCol>
-          </VRow>
-        </VList>
-      </VContainer>
+        <!-- Summary Item Col -->
+        <VCol
+          cols="12"
+          md="6"
+          sm="12"
+          xs="12"
+        >
+          <!-- Button Summary Items -->
+          <div class="w-50">
+            <VBtn
+              variant="text"
+              density="compact"
+              size="small"
+              class="font-weight-medium"
+              :ripple="false"
+              @click="expandState3 = !expandState3"
+            >
+              Summary Items
+              <VIcon
+                :icon="expandState3? 'bx-bxs-up-arrow' : 'bx-bxs-down-arrow'"
+                size="15px"
+                end
+              />
+            </VBtn>
+            <VDivider class="w-100" />
+          </div>
+
+          <!-- Summary Items List -->
+          <VExpandTransition>
+            <VList
+              v-show="expandState3"
+              lines="one"
+            >
+              <VListItemTitle
+                v-for="(item,idx) in prop.parseOrder.summary"
+                :key="idx"
+                :ripple="false"
+                class="text-subtitle-2 text-high-emphasis text-capitalize"
+              >
+                <VRow class="ms-1">
+                  <VCol cols="9">
+                    {{ item.product_name }}
+                  </VCol>
+                  <VCol cols="1">
+                    <span class="font-weight-black"> {{ item.qty }}  </span>
+                  </VCol>
+                  <VCol
+                    cols="1"
+                    class="ps-1"
+                  >
+                    <span> pack </span>
+                  </VCol>
+                </VRow>
+              </VListItemTitle>
+            </VList>
+          </VExpandTransition>
+        </VCol>
+      </VRow>
 
       <VCardActions>
         <VSpacer />
