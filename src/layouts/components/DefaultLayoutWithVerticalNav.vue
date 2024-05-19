@@ -77,6 +77,13 @@ const vuetifyTheme = useTheme()
       />
       <VerticalNavLink
         :item="{
+          title: 'Dashboard2',
+          icon: 'bx-home',
+          to: '/dashboard2',
+        }"
+      />
+      <VerticalNavLink
+        :item="{
           title: 'Account Settings',
           icon: 'mdi-account-cog-outline',
           to: '/account-settings',
@@ -155,14 +162,14 @@ const vuetifyTheme = useTheme()
       <VerticalNavLink
         :item="{
           title: 'Orders',
-          icon: 'mdi-form-select',
+          icon: 'bx-bxs-store-alt',
           to: '/orders',
         }"
       />
       <VerticalNavLink
         :item="{
           title: 'Products',
-          icon: 'bx-cake',
+          icon: 'bx-bxs-book-open',
           to: '/products',
         }"
       />

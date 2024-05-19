@@ -51,8 +51,9 @@ watch( () => isMainPage.value, () => {
             @click="isMainPage=false"
           >
             <VIcon
-              icon="bx-cart-add"
-              class="mr-2"
+              icon="bx-bxs-cart-add"
+              class="mr-1"
+              size="24px"
             />
             Add Order
           </VBtn>

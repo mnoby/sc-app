@@ -297,7 +297,10 @@ const debuggerBtn = () => {
 </script>
 
 <template>
-  <VForm ref="myForm">
+  <VForm
+    ref="myForm"
+    @submit.prevent=""
+  >
     <VRow class="mx-0">
       <!-- 👉 Order Number -->
       <VCol
